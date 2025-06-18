@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -28,14 +29,24 @@
             --fz-xl: 20px;
             --fz-heading: clamp(2rem, 5vw, 3.5rem);
             --border-radius: 8px;
+            /* NEW: CSS variable for background image URL */
+            --background-image-url: url('https://dl.dropbox.com/scl/fi/w7izm8xzbrcvk8bf5qjr3/can_you_make_a_grid_wallpaper_with_this_image_like_a_lot_of_them_but_really_tiny_as_it_is_only_32x32__make_it_like_a_detailled_grid_not_just_perfectly_placed_like_that_also_make_the_aspect_ratio_16_9_.png?rlkey=i5acacc2fnkg16tj6rqrmsy4n&st=uwyy77cp&dl=0'); /* Example URL, change as needed */
         }
 
         html, body {
             width: 100%;
+            /* height: 100%; REMOVED: This line was causing issues with content visibility and scroll animations. */
             margin: 0;
             padding: 0;
             overflow-x: hidden;
-            background-color: var(--navy);
+            
+            background-color: var(--navy); /* Fallback color */
+            background-image: var(--background-image-url);
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            background-attachment: fixed; /* Makes the background fixed */
+            
             color: var(--slate);
             font-family: var(--font-sans);
             cursor: none;
@@ -56,7 +67,7 @@
 
         .loading-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--navy);
+            background-color: var(--navy); /* This will cover the body background during load */
             display: flex; justify-content: center; align-items: center;
             z-index: 10000;
         }
@@ -123,7 +134,7 @@
             opacity: 0;
         }
 
-        .narrative-panel { max-width: 480px; padding: 30px; }
+        .narrative-panel { max-width: 480px; padding: 30px; /* Panels might have their own backgrounds, which is fine */ }
         .narrative-panel h2 { font-size: var(--fz-heading); color: var(--purple); font-family: var(--font-mono); font-weight: 500; margin-bottom: 20px; }
         .narrative-panel p { font-size: var(--fz-lg); line-height: 1.6; color: var(--light-slate); }
         .code-snippet { font-family: var(--font-mono); font-size: var(--fz-sm); padding: 20px; margin-top: 20px; background-color: #011627; border-radius: var(--border-radius); color: #d6deeb; white-space: pre-wrap; border: 1px solid var(--lightest-navy); transform-origin: top center; }
@@ -133,10 +144,18 @@
         
         #subsequent-content { 
             position: relative; 
-            background-color: var(--navy); 
+            background-color: transparent; /* MODIFIED: Allow body background to show through */
             z-index: 2;
         }
-        #final-page-content { padding: 150px 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #final-page-content { 
+            padding: 150px 20px; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            background-color: rgba(17, 34, 64, 0.9); /* NEW: Semi-transparent background for readability --light-navy @ 90% opacity */
+        }
         #final-page-content h1 { font-size: clamp(2.5rem, 7vw, 5rem); margin-bottom: 20px; color: var(--lightest-slate); }
         #final-page-content p { max-width: 600px; margin: 0 auto 40px; font-size: var(--fz-lg); }
         #final-page-content .contact-button { color: var(--purple); background-color: transparent; border: 1px solid var(--purple); border-radius: var(--border-radius); padding: 1.25rem 1.75rem; font-size: var(--fz-md); font-family: var(--font-mono); text-decoration: none; transition: all 0.3s; }
