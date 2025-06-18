@@ -163,7 +163,7 @@
             border-radius: var(--border-radius);
             box-shadow: 0 4px 16px 0 rgba(2,12,27,0.10);
             min-width: 260px;
-            max-width: 350px; /* UPDATED: Increased max-width for better balance with taller image */
+            max-width: 350px; 
             color: var(--lightest-slate);
             font-size: 1em;
             position: relative;
@@ -171,26 +171,26 @@
             opacity: 0;
             transform: scale(0.9) translateY(30px);
             transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1);
-            padding: 0; /* Remove original padding, applied to cert-details now */
+            padding: 0; 
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Ensures image border-radius is respected */
+            overflow: hidden; 
         }
 
         #portfolio-part-2 #sec-certif .cert-card.visible { opacity: 1 !important; transform: scale(1) translateY(0) !important; }
 
         #portfolio-part-2 #sec-certif .cert-image {
             width: 100%;
-            aspect-ratio: 4 / 3; /* UPDATED: Made images taller */
+            aspect-ratio: 4 / 3; 
             object-fit: cover;
-            display: block; /* Removes any extra space below image */
+            display: block; 
         }
 
         #portfolio-part-2 #sec-certif .cert-details {
             padding: 15px 18px; 
             display: flex;
             flex-direction: column;
-            flex-grow: 1; /* Allows details to fill card height */
+            flex-grow: 1; 
         }
 
         #portfolio-part-2 #sec-certif .cert-card .cert-title { color: var(--purple); font-weight: bold; font-size: 1.08em; margin-bottom: 4px; margin-top:0; }
@@ -221,7 +221,9 @@
             box-shadow: 0 5px 20px 0 rgba(2,12,27,0.15);
             min-width: 270px; 
             max-width: 330px; 
-            padding: 22px 24px;
+            /* padding: 22px 24px; MODIFIED: Moved to .project-card-content */
+            padding: 0; /* NEW */
+            overflow: hidden; /* NEW */
             color: var(--lightest-slate);
             position: relative;
             flex: 1 1 280px;
@@ -230,7 +232,7 @@
             transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1), box-shadow 0.3s ease;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            /* justify-content: space-between; REMOVED: Handled by inner flex container */
         }
 
         #portfolio-part-2 .project-card:hover {
@@ -241,6 +243,22 @@
         #portfolio-part-2 .project-card.visible {
             opacity: 1 !important;
             transform: scale(1) translateY(0) !important;
+        }
+        
+        /* NEW: Styles for project images */
+        #portfolio-part-2 .project-image {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* NEW: Styles for project card content wrapper */
+        #portfolio-part-2 .project-card-content {
+            padding: 22px 24px; /* Original padding from .project-card */
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allows content to fill card and button to align bottom */
         }
 
         #portfolio-part-2 .project-icon {
@@ -266,7 +284,7 @@
             color: var(--light-slate);
             margin-bottom: 18px;
             line-height: 1.5;
-            flex-grow: 1;
+            flex-grow: 1; /* Ensures description takes available space */
         }
 
         #portfolio-part-2 .project-link-button {
@@ -281,7 +299,7 @@
             transition: all 0.3s ease;
             display: inline-block; 
             text-align: center;
-            margin-top: auto;
+            margin-top: auto; /* Pushes button to the bottom of the flex container */
             align-self: flex-start;
         }
 
@@ -351,54 +369,69 @@
                         <h2>Mes Projets Réalisés</h2>
                         <div class="projects-grid">
                             <div class="project-card">
-                                <div class="project-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/tq0imi2c68paykdavxsee/Screenshot-2025-06-18-123705.jpg?rlkey=gdpqnen1gumh9k9o20b8k0bdx&st=38l49glk&dl=0" alt="Aperçu du projet Figma UI/UX">
+                                <div class="project-card-content">
+                                    <div class="project-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="project-title">Prototype UI/UX (Figma)</h3>
+                                        <p class="project-desc">Conception et prototypage d'une interface utilisateur interactive en utilisant Figma pour explorer des concepts visuels et fonctionnels.</p>
+                                    </div>
+                                    <a href="https://www.figma.com/proto/H9njjVujViUnaJ0mezwMdW/Untitled?node-id=3-2&t=LJ1o6elOzAO6JP2B-1&authuser=0&starting-point-node-id=3%3A2" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                                 </div>
-                                <div>
-                                    <h3 class="project-title">Prototype UI/UX (Figma)</h3>
-                                    <p class="project-desc">Conception et prototypage d'une interface utilisateur interactive en utilisant Figma pour explorer des concepts visuels et fonctionnels.</p>
-                                </div>
-                                <a href="https://www.figma.com/proto/H9njjVujViUnaJ0mezwMdW/Untitled?node-id=3-2&t=LJ1o6elOzAO6JP2B-1&authuser=0&starting-point-node-id=3%3A2" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                             </div>
                             <div class="project-card">
-                                <div class="project-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
+                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/iadmlrf0fi3yeiw5er0t2/Screenshot-2025-06-18-123509.jpg?rlkey=czd6o9gyvdj79uxv6pru02jcc&st=xocycasd&dl=0" alt="Aperçu du projet Portfolio Web Statique">
+                                <div class="project-card-content">
+                                    <div class="project-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="project-title">Portfolio Web Statique</h3>
+                                        <p class="project-desc">Une première version de mon portfolio personnel, développé avec HTML et CSS pour présenter mes compétences initiales en développement web.</p>
+                                    </div>
+                                    <a href="https://alexmusial.w3spaces.com/index.html" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                                 </div>
-                                <div>
-                                    <h3 class="project-title">Portfolio Web Statique</h3>
-                                    <p class="project-desc">Une première version de mon portfolio personnel, développé avec HTML et CSS pour présenter mes compétences initiales en développement web.</p>
-                                </div>
-                                <a href="https://alexmusial.w3spaces.com/index.html" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                             </div>
                             <div class="project-card">
-                                <div class="project-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.314.06a15.092 15.092 0 01-2.49_2.49c-.04.055-.079.112-.118.17M4.5 12H3m18 0h-1.5m-15 0a3 3 0 100 6h12a3 3 0 100-6M4.5 12a3 3 0 110-6h12a3 3 0 110 6" /></svg>
+                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/ae4tpi3u7hebf7sykh4pw/Screenshot-2025-06-18-122819.jpg?rlkey=gmu49gmd498tvg0t8kx1mh2yj&st=ku39buwq&dl=0" alt="Aperçu du projet Jeu 2D en JavaScript">
+                                <div class="project-card-content">
+                                    <div class="project-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.314.06a15.092 15.092 0 01-2.49_2.49c-.04.055-.079.112-.118.17M4.5 12H3m18 0h-1.5m-15 0a3 3 0 100 6h12a3 3 0 100-6M4.5 12a3 3 0 110-6h12a3 3 0 110 6" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="project-title">Jeu 2D en JavaScript</h3>
+                                        <p class="project-desc">Un jeu 2D interactif, créé avec HTML, CSS et JavaScript, démontrant les bases de la logique de jeu et de la manipulation du DOM.</p>
+                                    </div>
+                                    <a href="https://alexmusial.w3spaces.com/jeux2d.html?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                                 </div>
-                                <div>
-                                    <h3 class="project-title">Jeu 2D en JavaScript</h3>
-                                    <p class="project-desc">Un jeu 2D interactif, créé avec HTML, CSS et JavaScript, démontrant les bases de la logique de jeu et de la manipulation du DOM.</p>
-                                </div>
-                                <a href="https://alexmusial.w3spaces.com/jeux2d.html?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                             </div>
                             <div class="project-card">
-                                <div class="project-icon">
-                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/nzftha2p8774g6tfm0g97/Screenshot-2025-06-18-122224.jpg?rlkey=ylbhgmwpbtspi6x51m4w1vduj&st=93mf91v6&dl=0" alt="Aperçu du projet Python PDF">
+                                <div class="project-card-content">
+                                    <div class="project-icon">
+                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="project-title">Projet Python (PDF)</h3>
+                                        <p class="project-desc">Un script Python, probablement pour la manipulation ou la génération de documents PDF, montrant des compétences en programmation backend.</p>
+                                    </div>
+                                    <a href="https://drive.google.com/file/d/1orbno7R7gljpphHBybPI82U-Cwu0_MlP/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                                 </div>
-                                <div>
-                                    <h3 class="project-title">Projet Python (PDF)</h3>
-                                    <p class="project-desc">Un script Python, probablement pour la manipulation ou la génération de documents PDF, montrant des compétences en programmation backend.</p>
-                                </div>
-                                <a href="https://drive.google.com/file/d/1W5RMFwPKouqdbdClxotepIoOwdkZC9s6/view" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                             </div>
                             <div class="project-card">
-                                <div class="project-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" /></svg>
+                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/z18sp9bl2e800lf8a8aq9/Screenshot-2025-06-18-121631.jpg?rlkey=5g1kx8uuoc55c36kx09oaxz1g&st=9mh2pqfa&dl=0" alt="Aperçu du projet App Web Réfrancisation">
+                                <div class="project-card-content">
+                                    <div class="project-icon">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" /></svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="project-title">App Web 'Réfrancisation'</h3>
+                                        <p class="project-desc">Une application web interactive développée pour un projet de réfrancisation, déployée sur Vercel, combinant frontend et potentiellement backend.</p>
+                                    </div>
+                                    <a href="https://prdg-refrancisation.vercel.app/?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                                 </div>
-                                <div>
-                                    <h3 class="project-title">App Web 'Réfrancisation'</h3>
-                                    <p class="project-desc">Une application web interactive développée pour un projet de réfrancisation, déployée sur Vercel, combinant frontend et potentiellement backend.</p>
-                                </div>
-                                <a href="https://prdg-refrancisation.vercel.app/?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
                             </div>
                         </div>
                     </section>
