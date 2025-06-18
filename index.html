@@ -47,7 +47,7 @@
             top: 30px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 9998; /* Below cursor, above content */
+            z-index: 9999; /* Adjusted: Above cursor, below loader */
             color: var(--lightest-slate);
             font-size: var(--fz-lg);
             font-family: var(--font-sans);
@@ -67,7 +67,7 @@
         }
         
         #cursor-container {
-            position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;
+            position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9998; /* Adjusted: Below fixed name */
         }
         .cursor-trail {
             position: absolute; background: var(--purple); border-radius: 50%; will-change: transform;
@@ -104,7 +104,7 @@
         }
         .intro-text .word { display: inline-block; transform: translateY(110%); }
 
-        #main-content .cert-card {
+        #main-content .cert-card { /* Styles for cert-cards in the GSAP animation section */
             display: flex; align-items: center; gap: 20px; padding: 15px 25px; min-width: 320px;
             background: linear-gradient(145deg, rgba(35, 53, 84, 0.7), rgba(17, 34, 64, 0.7));
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -153,14 +153,144 @@
         #portfolio-part-2 section.animated { opacity: 1 !important; transform: translateY(0) scale(1) !important; transition: opacity 0.8s cubic-bezier(.77,0,.18,1), transform 0.9s cubic-bezier(.77,0,.18,1); }
         #portfolio-part-2 section h2 { color: var(--purple); font-family: var(--font-mono); font-size: 1.5em; margin-top: 0;}
         #portfolio-part-2 section h3 { color: var(--lightest-slate); }
+        
         #portfolio-part-2 .certificates { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px; }
-        #portfolio-part-2 .cert-card { background: linear-gradient(135deg, rgba(35, 53, 84, 0.7), rgba(17, 34, 64, 0.7)); border: 1px solid rgba(255,255,255,0.1); border-radius: var(--border-radius); box-shadow: 0 4px 16px 0 rgba(2,12,27,0.10); min-width: 260px; max-width: 320px; padding: 18px 20px; margin-bottom: 0; color: var(--lightest-slate); font-size: 1em; position: relative; flex: 1 1 260px; opacity: 0; transform: scale(0.9) translateY(30px); transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1); }
-        #portfolio-part-2 .cert-card.visible { opacity: 1 !important; transform: scale(1) translateY(0) !important; }
-        #portfolio-part-2 .cert-card .cert-title { color: var(--purple); font-weight: bold; font-size: 1.08em;}
-        #portfolio-part-2 .cert-card .cert-date { font-size: 0.93em; color: var(--light-slate);}
-        #portfolio-part-2 .cert-card .cert-org { font-size: 0.93em; color: var(--slate);}
-        #portfolio-part-2 .cert-card .cert-instructor { font-size: 0.93em; color: var(--slate);}
-        #portfolio-part-2 .cert-card .cert-desc { font-size: 0.96em; color: var(--lightest-slate); margin-top: 8px;}
+        
+        /* Updated Cert Card styles for sec-certif */
+        #portfolio-part-2 #sec-certif .cert-card {
+            background: linear-gradient(135deg, rgba(35, 53, 84, 0.7), rgba(17, 34, 64, 0.7));
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 16px 0 rgba(2,12,27,0.10);
+            min-width: 260px;
+            max-width: 350px; /* UPDATED: Increased max-width for better balance with taller image */
+            color: var(--lightest-slate);
+            font-size: 1em;
+            position: relative;
+            flex: 1 1 260px;
+            opacity: 0;
+            transform: scale(0.9) translateY(30px);
+            transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1);
+            padding: 0; /* Remove original padding, applied to cert-details now */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Ensures image border-radius is respected */
+        }
+
+        #portfolio-part-2 #sec-certif .cert-card.visible { opacity: 1 !important; transform: scale(1) translateY(0) !important; }
+
+        #portfolio-part-2 #sec-certif .cert-image {
+            width: 100%;
+            aspect-ratio: 4 / 3; /* UPDATED: Made images taller */
+            object-fit: cover;
+            display: block; /* Removes any extra space below image */
+        }
+
+        #portfolio-part-2 #sec-certif .cert-details {
+            padding: 15px 18px; 
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1; /* Allows details to fill card height */
+        }
+
+        #portfolio-part-2 #sec-certif .cert-card .cert-title { color: var(--purple); font-weight: bold; font-size: 1.08em; margin-bottom: 4px; margin-top:0; }
+        #portfolio-part-2 #sec-certif .cert-card .cert-date { font-size: 0.93em; color: var(--light-slate); margin-bottom: 2px; }
+        #portfolio-part-2 #sec-certif .cert-card .cert-org { font-size: 0.93em; color: var(--slate); margin-bottom: 2px; }
+        #portfolio-part-2 #sec-certif .cert-card .cert-instructor { font-size: 0.93em; color: var(--slate); margin-bottom: 8px; }
+        #portfolio-part-2 #sec-certif .cert-card .cert-desc { 
+            font-size: 0.93em; 
+            color: var(--lightest-slate); 
+            line-height: 1.5;
+            margin-top: 0; 
+            flex-grow: 1;
+        }
+        
+        /* Project Section Styles */
+        #portfolio-part-2 .projects-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        #portfolio-part-2 .project-card {
+            background: linear-gradient(135deg, rgba(35, 53, 84, 0.85), rgba(17, 34, 64, 0.85));
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 20px 0 rgba(2,12,27,0.15);
+            min-width: 270px; 
+            max-width: 330px; 
+            padding: 22px 24px;
+            color: var(--lightest-slate);
+            position: relative;
+            flex: 1 1 280px;
+            opacity: 0;
+            transform: scale(0.9) translateY(30px);
+            transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1), box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #portfolio-part-2 .project-card:hover {
+            box-shadow: 0 8px 35px 0 var(--navy-shadow), 0 0 15px var(--purple-light);
+            transform: scale(1.02) translateY(-5px);
+        }
+
+        #portfolio-part-2 .project-card.visible {
+            opacity: 1 !important;
+            transform: scale(1) translateY(0) !important;
+        }
+
+        #portfolio-part-2 .project-icon {
+            margin-bottom: 15px;
+            color: var(--purple);
+            height: 32px;
+        }
+        #portfolio-part-2 .project-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        #portfolio-part-2 .project-title {
+            color: var(--purple);
+            font-family: var(--font-sans);
+            font-weight: 600;
+            font-size: 1.2em; 
+            margin-bottom: 8px;
+        }
+
+        #portfolio-part-2 .project-desc {
+            font-size: 0.98em;
+            color: var(--light-slate);
+            margin-bottom: 18px;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        #portfolio-part-2 .project-link-button {
+            color: var(--purple);
+            background-color: transparent;
+            border: 1px solid var(--purple);
+            border-radius: var(--border-radius);
+            padding: 0.7rem 1.15rem; 
+            font-size: var(--fz-sm);
+            font-family: var(--font-mono);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block; 
+            text-align: center;
+            margin-top: auto;
+            align-self: flex-start;
+        }
+
+        #portfolio-part-2 .project-link-button:hover {
+            background-color: var(--purple-light);
+            box-shadow: 0 0 15px var(--purple-light);
+        }
+        /* End Project Section Styles */
+
         #portfolio-part-2 .reflection-q { font-weight: bold; color: var(--purple);}
         #portfolio-part-2 .skills-list, #portfolio-part-2 .skills-list-2 { display: flex; flex-wrap: wrap; gap: 14px 18px; margin: 8px 0 0 0; padding: 0; list-style: none; }
         #portfolio-part-2 .skills-list li, #portfolio-part-2 .skills-list-2 li { background: #233554; color: var(--lightest-slate); border-radius: 5px; padding: 3px 11px; font-size: 1em; font-family: var(--font-mono); }
@@ -168,7 +298,7 @@
         #portfolio-part-2 .footer.animated { opacity: 1 !important; transform: translateY(0) !important; }
         #portfolio-part-2 .contact-button { color: var(--purple); background-color: transparent; border: 1px solid var(--purple); border-radius: 4px; padding: 0.75rem 1.25rem; font-size: var(--fz-md); font-family: var(--font-mono); text-decoration: none; transition: all 0.3s; display: inline-block; }
         #portfolio-part-2 .contact-button:hover { background-color: var(--purple-light); }
-        @media (max-width: 700px) { #portfolio-part-2 .certificates { flex-direction: column; align-items: stretch; } #portfolio-part-2 .container { padding: 8px 2vw 40px 2vw; } #portfolio-part-2 section { padding: 16px 6vw; } }
+        @media (max-width: 700px) { #portfolio-part-2 .certificates, #portfolio-part-2 .projects-grid { flex-direction: column; align-items: stretch; } #portfolio-part-2 .container { padding: 8px 2vw 40px 2vw; } #portfolio-part-2 section { padding: 16px 6vw; } #portfolio-part-2 .project-card, #portfolio-part-2 #sec-certif .cert-card { max-width: none; } }
     </style>
 </head>
 
@@ -216,8 +346,142 @@
                       <h1>Portfolio numérique – Enjeux, compétences et certifications</h1>
                       <div class="meta">Nom : Alex Musial<br>Cours : ICS4U<br>Date : 19 juin 2025</div>
                     </header>
+
+                    <section id="sec-projects">
+                        <h2>Mes Projets Réalisés</h2>
+                        <div class="projects-grid">
+                            <div class="project-card">
+                                <div class="project-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="project-title">Prototype UI/UX (Figma)</h3>
+                                    <p class="project-desc">Conception et prototypage d'une interface utilisateur interactive en utilisant Figma pour explorer des concepts visuels et fonctionnels.</p>
+                                </div>
+                                <a href="https://www.figma.com/proto/H9njjVujViUnaJ0mezwMdW/Untitled?node-id=3-2&t=LJ1o6elOzAO6JP2B-1&authuser=0&starting-point-node-id=3%3A2" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
+                            </div>
+                            <div class="project-card">
+                                <div class="project-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="project-title">Portfolio Web Statique</h3>
+                                    <p class="project-desc">Une première version de mon portfolio personnel, développé avec HTML et CSS pour présenter mes compétences initiales en développement web.</p>
+                                </div>
+                                <a href="https://alexmusial.w3spaces.com/index.html" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
+                            </div>
+                            <div class="project-card">
+                                <div class="project-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.314.06a15.092 15.092 0 01-2.49_2.49c-.04.055-.079.112-.118.17M4.5 12H3m18 0h-1.5m-15 0a3 3 0 100 6h12a3 3 0 100-6M4.5 12a3 3 0 110-6h12a3 3 0 110 6" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="project-title">Jeu 2D en JavaScript</h3>
+                                    <p class="project-desc">Un jeu 2D interactif, créé avec HTML, CSS et JavaScript, démontrant les bases de la logique de jeu et de la manipulation du DOM.</p>
+                                </div>
+                                <a href="https://alexmusial.w3spaces.com/jeux2d.html?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
+                            </div>
+                            <div class="project-card">
+                                <div class="project-icon">
+                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="project-title">Projet Python (PDF)</h3>
+                                    <p class="project-desc">Un script Python, probablement pour la manipulation ou la génération de documents PDF, montrant des compétences en programmation backend.</p>
+                                </div>
+                                <a href="https://drive.google.com/file/d/1W5RMFwPKouqdbdClxotepIoOwdkZC9s6/view" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
+                            </div>
+                            <div class="project-card">
+                                <div class="project-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" /></svg>
+                                </div>
+                                <div>
+                                    <h3 class="project-title">App Web 'Réfrancisation'</h3>
+                                    <p class="project-desc">Une application web interactive développée pour un projet de réfrancisation, déployée sur Vercel, combinant frontend et potentiellement backend.</p>
+                                </div>
+                                <a href="https://prdg-refrancisation.vercel.app/?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
+                            </div>
+                        </div>
+                    </section>
+
                     <section id="sec-reflexion"><h2>2. Réflexion personnelle sur mon cheminement</h2><p><span class="reflection-q">Qu’ai-je appris ce semestre dans le domaine de l’informatique ?</span><br>Ce semestre, j’ai développé des compétences en programmation Python, JavaScript et HTML, en gestion de données, en animation web et en administration de systèmes Linux. J’ai appris à concevoir des applications interactives, à analyser des jeux de données réels, et à comprendre l’importance de la sécurité et de l’organisation dans les systèmes informatiques.</p><p><span class="reflection-q">Quelles difficultés ai-je rencontrées et comment les ai-je surmontées ?</span><br>La plus grande difficulté a été la gestion de données réelles : le nettoyage (data wrangling) est complexe et demande de la rigueur. J’ai aussi parfois eu du mal à structurer des projets plus longs. J’ai surmonté ces défis en me formant avec des ressources complémentaires, en demandant de l’aide à mes pairs, et en divisant les tâches en étapes plus petites et gérables.</p><p><span class="reflection-q">Qu’est-ce qui m’a motivé ou surpris dans mon apprentissage ?</span><br>J’ai été surpris par l’impact concret de l’informatique en médecine : la possibilité d’analyser de grands ensembles de données pour améliorer la prévention et le diagnostic. Ce lien avec la santé m’a motivé à approfondir la science des données.</p></section>
-                    <section id="sec-certif"><h2>3. Résumé de ma certification Cisco et enjeux</h2><div class="certificates"><div class="cert-card"><div class="cert-title">Introduction à la science des données</div><div class="cert-date">13 juin 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div><div class="cert-desc">Ce cours m’a permis de comprendre les étapes fondamentales de la gestion des données, de leur collecte et nettoyage à leur analyse et visualisation. J’ai pris conscience de l’importance du travail préparatoire sur les données, et de l’impact de l’analyse sur la médecine personnalisée.</div></div><div class="cert-card"><div class="cert-title">Les bases du matériel informatique</div><div class="cert-date">10 juin 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div></div><div class="cert-card"><div class="cert-title">HTML Essentials</div><div class="cert-date">12 avril 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div></div><div class="cert-card"><div class="cert-title">JavaScript Essentials 1</div><div class="cert-date">14 avril 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div></div><div class="cert-card"><div class="cert-title">Python Essentials 1</div><div class="cert-date">16 avril 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div></div><div class="cert-card"><div class="cert-title">Python Essentials 2</div><div class="cert-date">11 juin 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div></div><div class="cert-card"><div class="cert-title">Linux Unhatched</div><div class="cert-date">13 juin 2025</div><div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div><div class="cert-instructor">Normand Lampron, Instructeur</div></div></div><div style="margin-top:22px;"><span class="reflection-q">Lien avec mes intérêts :</span><br>J’ai choisi la certification « Introduction à la science des données » car elle correspond à mon intérêt pour la médecine et l’analyse de données. J’ai appris à extraire des informations pertinentes à partir de données brutes, ce qui me permettra d’apporter une contribution à la médecine personnalisée et à la santé publique.</div><div style="margin-top:12px;"><span class="reflection-q">Applications concrètes :</span><br>L’analyse des données permet d’optimiser la logistique hospitalière, de réduire les listes d’attente et d’identifier des modèles pour des diagnostics plus précis. L’impact potentiel de ces outils est immense pour la société.</div><div style="margin-top:12px;"><span class="reflection-q">Impact de la technologie :</span><br>L’utilisation de la science des données en médecine soulève aussi des enjeux éthiques (confidentialité), juridiques (protection des données), et d’accessibilité (équité d’accès aux soins).</div></section>
+                    <section id="sec-certif">
+                        <h2>3. Résumé de ma certification Cisco et enjeux</h2>
+                        <div class="certificates">
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/fsucfcbcvfg0rz3qh3osn/_certificate_alexmusial551-gmail-com_e6012c47-19cd-4f89-8186-469e0a5534bf-1.png?rlkey=7df8iitiyjk7aerzlnw4uyeat&st=to16b2kg&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">Introduction à la science des données</div>
+                                    <div class="cert-date">13 juin 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Ce cours m’a permis de comprendre les étapes fondamentales de la gestion des données, de leur collecte et nettoyage à leur analyse et visualisation. J’ai pris conscience de l’importance du travail préparatoire sur les données, et de l’impact de l’analyse sur la médecine personnalisée.</div>
+                                </div>
+                            </div>
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/ylwtwx5sd12jy1ydc8uan/_certificate_alexmusial551-gmail-com_7792bc63-fa68-4a2e-8509-190ffa7332a5-1-1.png?rlkey=ofn1qqjqdo575udcdjxr01sr7&st=6qhzdmim&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">Les bases du matériel informatique</div>
+                                    <div class="cert-date">10 juin 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Apprentissage des composants essentiels d'un ordinateur et de leur fonctionnement.</div>
+                                </div>
+                            </div>
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/ea5r854jtma30hj21cv6l/_certificate_alexmusial551-gmail-com_cacbe5e2-3d3c-456d-9c22-190139c0e2d6-1.png?rlkey=ufdv6iznh5c71msx0du4fxjyx&st=7a9sm36f&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">HTML Essentials</div>
+                                    <div class="cert-date">12 avril 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Fondamentaux du langage HTML pour la structuration de pages web.</div>
+                                </div>
+                            </div>
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/f8oftgsvky9k16qqcc48a/_certificate_alexmusial551-gmail-com_8507d218-3942-4db1-8765-10770a511b89-1.png?rlkey=1zsrlwsbczpdlo313rf3dp5pm&st=k83ttdpj&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">JavaScript Essentials 1</div>
+                                    <div class="cert-date">14 avril 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Introduction à la programmation JavaScript pour l'interactivité web.</div>
+                                </div>
+                            </div>
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/43vvtyubosv0hxb7zmo8t/_certificate_alexmusial551-gmail-com_a8179f73-6a51-420d-90a5-4b6ae7512c64-1-1.png?rlkey=zmw0nncx44a9e8ephymcbw1cy&st=qhh8wilk&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">Python Essentials 1</div>
+                                    <div class="cert-date">16 avril 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Bases de la programmation avec le langage Python.</div>
+                                </div>
+                            </div>
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/padb906ya4zlvu75u1gvf/_certificate_alexmusial551-gmail-com_501b19fc-82f9-4a00-a513-fe683c2f1b22-1.png?rlkey=h8xhpoo2o19pt4mhpad7wqar1&st=bopy7jrg&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">Python Essentials 2</div>
+                                    <div class="cert-date">11 juin 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Concepts avancés de la programmation Python et modules.</div>
+                                </div>
+                            </div>
+                            <div class="cert-card">
+                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/0i8rvj835s1yic8ocdnvv/_certificate_alexmusial551-gmail-com_30c1a700-8571-4627-8d25-9d1abb0c40d7-1.png?rlkey=s0l6g1rx9bng3e19jygrb7soy&st=7ftthydk&dl=0" alt="Certification Badge">
+                                <div class="cert-details">
+                                    <div class="cert-title">Linux Unhatched</div>
+                                    <div class="cert-date">13 juin 2025</div>
+                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
+                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
+                                    <div class="cert-desc">Introduction aux bases du système d'exploitation Linux et commandes.</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:22px;"><span class="reflection-q">Lien avec mes intérêts :</span><br>J’ai choisi la certification « Introduction à la science des données » car elle correspond à mon intérêt pour la médecine et l’analyse de données. J’ai appris à extraire des informations pertinentes à partir de données brutes, ce qui me permettra d’apporter une contribution à la médecine personnalisée et à la santé publique.</div>
+                        <div style="margin-top:12px;"><span class="reflection-q">Applications concrètes :</span><br>L’analyse des données permet d’optimiser la logistique hospitalière, de réduire les listes d’attente et d’identifier des modèles pour des diagnostics plus précis. L’impact potentiel de ces outils est immense pour la société.</div>
+                        <div style="margin-top:12px;"><span class="reflection-q">Impact de la technologie :</span><br>L’utilisation de la science des données en médecine soulève aussi des enjeux éthiques (confidentialité), juridiques (protection des données), et d’accessibilité (équité d’accès aux soins).</div>
+                    </section>
                     <section id="sec-avenir"><h2>4. Réflexion sur mon avenir professionnel ou académique</h2><p>Je souhaite poursuivre des études en médecine, tout en continuant à développer mes compétences en informatique, notamment en science des données et en intelligence artificielle. Je possède déjà des bases solide en programmation, en analyse de données et en administration de systèmes. Pour intégrer une université, je vais préparer mon dossier scolaire, rédiger une lettre de motivation et me préparer à des entrevues ou à des évaluations techniques.</p><ul class="skills-list"><li>Programmation Python</li><li>Analyse de données</li><li>Développement web (HTML, JS)</li><li>Linux</li><li>Animation web</li><li>Résolution de problèmes</li></ul><p style="margin-top:12px;">Je me sens prêt à participer à une entrevue d’admission, à rencontrer un conseiller d’orientation ou à passer une évaluation en milieu professionnel, grâce à ma préparation et à mon engagement.</p></section>
                     <section id="sec-savoir"><h2>5. Réflexion sur le savoir-être au travail</h2><div><span class="reflection-q">a) Compétences personnelles (au moins 6) :</span><ul class="skills-list-2"><li>Travail en équipe</li><li>Résolution de problèmes</li><li>Organisation</li><li>Fiabilité</li><li>Initiative</li><li>Informatique</li><li>Communication verbale</li></ul></div><div style="margin-top:10px;"><span class="reflection-q">b) Compétences recherchées dans mon secteur :</span><ul class="skills-list-2"><li>Analyse de données</li><li>Résolution de problèmes</li><li>Informatique</li><li>Travail en autonomie</li><li>Organisation</li><li>Communication</li></ul></div><div style="margin-top:10px;"><span class="reflection-q">c) Analyse personnelle :</span><br>Oui, je possède déjà plusieurs des compétences les plus recherchées, comme la résolution de problèmes, l’informatique et l’organisation. Par exemple, lors de projets de programmation, j’ai su collaborer avec d’autres élèves, organiser mon travail, et prendre des initiatives pour résoudre des bugs complexes. Je dois encore améliorer ma gestion du stress et ma capacité à communiquer des résultats techniques à un public non spécialiste.</div><div style="margin-top:12px;"><span class="reflection-q">Suis-je prêt pour le secteur visé ?</span><br>Je me sens prêt à exercer dans le domaine de l’informatique appliquée à la santé, mais je vais continuer à développer mes compétences en communication et à rester à jour sur les enjeux éthiques et technologiques du secteur.</div></section>
                     <section id="sec-conclu"><h2>Conclusion</h2><p>Ce portfolio témoigne de mon cheminement, de mes apprentissages et de mon engagement envers les enjeux actuels du numérique et de la santé. Je suis motivé à poursuivre dans cette voie et à contribuer à une société plus innovante et équitable grâce à l’informatique.</p><div style="margin-top:20px; text-align:center;"><a href="mailto:alex.musial.demo@email.com" class="contact-button">Me contacter</a></div></section>
@@ -237,14 +501,13 @@
             
             const mainContent = document.getElementById('main-content');
             
-            // NEW: Function to animate the fixed name
             const animateFixedName = () => {
                 gsap.to("#fixed-name", {
                     opacity: 0,
                     scrollTrigger: {
                         trigger: "body",
                         start: "top top",
-                        end: "150px top", // Fades out over the first 150px of scroll
+                        end: "150px top", 
                         scrub: true
                     }
                 });
@@ -327,7 +590,12 @@
               document.querySelectorAll('#portfolio-part-2 section').forEach((sec) => {
                 gsap.to(sec, { scrollTrigger: { trigger: sec, start: "top 85%", toggleClass: {targets: sec, className: "animated"}, once: true } });
               });
-              document.querySelectorAll('#portfolio-part-2 .cert-card').forEach((card, idx) => {
+              // Animate Cert Cards in sec-certif
+              document.querySelectorAll('#portfolio-part-2 #sec-certif .cert-card').forEach((card, idx) => {
+                gsap.to(card, { scrollTrigger: { trigger: card, start: "top 90%", toggleClass: {targets: card, className: "visible"}, once: true, delay: idx * 0.08 } });
+              });
+              // Animate Project Cards
+              document.querySelectorAll('#portfolio-part-2 .project-card').forEach((card, idx) => {
                 gsap.to(card, { scrollTrigger: { trigger: card, start: "top 90%", toggleClass: {targets: card, className: "visible"}, once: true, delay: idx * 0.08 } });
               });
               gsap.to('#portfolio-part-2 .footer', { scrollTrigger: { trigger: '#portfolio-part-2 .footer', start: "top 95%", toggleClass: {targets: '#portfolio-part-2 .footer', className: "animated"}, once: true } });
@@ -335,7 +603,7 @@
 
             initPreloader();
             initMotionBlurCursor();
-            animateFixedName(); // Call the new function
+            animateFixedName(); 
             animatePart2Sections();
         };
 
