@@ -170,7 +170,7 @@
         /* =====================================================================
            GLOBAL STATE & AUDIO ENGINE
            ===================================================================== */
-        let touchMode = false; // Detects if the user is on mobile
+        let touchMode = false;
         window.addEventListener('touchstart', () => { 
             touchMode = true; document.body.classList.add('touch-device'); 
         }, { once: true });
@@ -206,8 +206,9 @@
         
         // P2P Networking
         let peer, myId, myName, isHost = false;
-        let connections = {}; // host holds clients, client holds host
-        let networkPlayers = {}; // { id: { name, x, y, hp, maxHp, ult, dead, angle } }
+        let connections = {}; // Stores all connected peers
+        let hostConn = null;  // Persistent Data Channel for Clients connecting to the Host
+        let networkPlayers = {}; 
         let roomCode = "";
 
         // Game World
@@ -237,7 +238,7 @@
         }
 
         /* =====================================================================
-           NETWORKING (PEERJS)
+           NETWORKING (PEERJS) - REWRITTEN FOR STABILITY
            ===================================================================== */
         function generateRoomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -245,12 +246,28 @@
             return res;
         }
 
+        function broadcast(data, excludePeerId = null) {
+            for(let key in connections) {
+                if(key !== excludePeerId && connections[key].open) {
+                    connections[key].send(data);
+                }
+            }
+        }
+
+        function sendNetwork(data) {
+            if (isHost) {
+                broadcast(data); // Host broadcasts to all clients
+            } else if (hostConn && hostConn.open) {
+                hostConn.send(data); // Client streams to Host
+            }
+        }
+
         function initPeer(role, code) {
             myName = document.getElementById('playerName').value.trim() || 'OPERATIVE';
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
             myId = 'CHRONO-' + roomCode + '-' + Math.floor(Math.random()*10000);
 
-            peer = new Peer(myId, { debug: 2 });
+            peer = new Peer(myId, { debug: 1 });
 
             peer.on('open', id => {
                 document.getElementById('mainMenu').classList.add('hidden');
@@ -264,8 +281,9 @@
                     document.getElementById('btnStartGame').classList.remove('hidden');
                 } else {
                     document.getElementById('waitHostText').classList.remove('hidden');
-                    const conn = peer.connect('CHRONO-' + roomCode + '-HOST');
-                    setupConnection(conn);
+                    // CLIENT: Open exactly ONE persistent data channel to the host
+                    hostConn = peer.connect('CHRONO-' + roomCode + '-HOST');
+                    setupConnection(hostConn);
                 }
             });
 
@@ -292,6 +310,7 @@
                 }
                 else if (data.type === 'CHAT') {
                     addChatMessage(data.name, data.msg);
+                    if(isHost) broadcast(data, conn.peer); // Host Relays Chat
                 }
                 else if (data.type === 'START_GAME') {
                     startGame();
@@ -311,6 +330,7 @@
                 }
                 else if (data.type === 'SPAWN_BULLET') {
                     entities.bullets.push(new Bullet(data.x, data.y, data.angle, data.speed, data.dmg, data.pierce, data.color));
+                    if(isHost) broadcast(data, conn.peer); // Host Relays Bullets to others
                 }
                 else if (data.type === 'HIT_ENEMY' && isHost) {
                     let e = entities.enemies[data.eId];
@@ -338,7 +358,9 @@
                         checkLevelUp();
                     }
                 }
-                else if (data.type === 'USE_ULT' && isHost) { triggerEMP(data.x, data.y); }
+                else if (data.type === 'USE_ULT' && isHost) { 
+                    triggerEMP(data.x, data.y); 
+                }
                 else if (data.type === 'EMP_EFFECT') {
                     spawnParticles(data.x, data.y, 30, '#ff0', 300);
                     WebAudioSynth.ult(); screenShake = 30;
@@ -365,13 +387,11 @@
             });
         }
 
-        function broadcast(data) { for(let key in connections) connections[key].send(data); }
-
         function sendChat() {
             let msg = document.getElementById('chatInput').value.trim();
             if(!msg) return;
-            let packet = { type: 'CHAT', name: myName, msg: msg };
-            addChatMessage(myName, msg); broadcast(packet);
+            addChatMessage(myName, msg); 
+            sendNetwork({ type: 'CHAT', name: myName, msg: msg });
             document.getElementById('chatInput').value = '';
         }
 
@@ -422,7 +442,6 @@
                 this.x = MathUtils.clamp(this.x, -MAP_SIZE, MAP_SIZE);
                 this.y = MathUtils.clamp(this.y, -MAP_SIZE, MAP_SIZE);
 
-                // FIXED: Aiming logic strictly looks at mouse on PC, or uses twin-stick on Mobile
                 let aimAngle = this.visualAngle; 
                 let isShooting = false;
                 
@@ -433,7 +452,6 @@
                         aimAngle = Math.atan2(dy, dx);
                     }
                 } else {
-                    // On PC, always smoothly track the mouse cursor
                     aimAngle = MathUtils.angle(this.x, this.y, mouse.x + camera.x, mouse.y + camera.y);
                     if (mouse.down) isShooting = true;
                 }
@@ -460,7 +478,7 @@
                             if(isHost) {
                                 sharedState.xp += g.val; checkLevelUp(); delete entities.gems[gid]; WebAudioSynth.xp();
                             } else {
-                                broadcast({ type: 'COLLECT_GEM', gId: gid }); delete entities.gems[gid];
+                                sendNetwork({ type: 'COLLECT_GEM', gId: gid }); delete entities.gems[gid];
                             }
                             this.ultCharge = Math.min(100, this.ultCharge + g.val * 0.5);
                         }
@@ -474,14 +492,14 @@
                     let a = startAngle + (i * spread);
                     let b = new Bullet(this.x, this.y, a, this.bulletSpeed, this.damage, this.pierce, this.ultActiveTimer > 0 ? '#ff0' : '#0ff');
                     entities.bullets.push(b);
-                    if(!isHost) broadcast({ type: 'SPAWN_BULLET', x: this.x, y: this.y, angle: a, speed: this.bulletSpeed, dmg: this.damage, pierce: this.pierce, color: b.color });
+                    sendNetwork({ type: 'SPAWN_BULLET', x: this.x, y: this.y, angle: a, speed: this.bulletSpeed, dmg: this.damage, pierce: this.pierce, color: b.color });
                 }
                 spawnParticles(this.x, this.y, 2, '#fff', 50, angle + Math.PI, 0.5);
             }
             triggerUlt() {
                 this.ultCharge = 0; this.invincTimer = 5; this.ultActiveTimer = 5;
                 if(isHost) triggerEMP(this.x, this.y);
-                else broadcast({ type: 'USE_ULT', x: this.x, y: this.y });
+                else sendNetwork({ type: 'USE_ULT', x: this.x, y: this.y });
             }
             draw(ctx, isLocal) {
                 if(this.dead) return;
@@ -647,7 +665,7 @@
                             gameState = STATE.PLAYING; lastTime = performance.now();
                         }
                     } else {
-                        peer.connect('CHRONO-' + roomCode + '-HOST').send({ type: 'UPGRADE_READY' });
+                        sendNetwork({ type: 'UPGRADE_READY' });
                     }
                 };
                 container.appendChild(card);
@@ -757,7 +775,7 @@
                             b.hitList.push(eid);
                             spawnParticles(e.x, e.y, 2, '#f05', 100);
                             if(isHost) { e.hp -= b.damage; if(e.hp<=0){ sharedState.xp += e.val; delete entities.enemies[eid]; entities.gems[nextEntityId++]={x:e.x,y:e.y,val:e.val}; WebAudioSynth.exp(); checkLevelUp();} }
-                            else { peer.connect('CHRONO-' + roomCode + '-HOST').send({ type: 'HIT_ENEMY', eId: eid, dmg: b.damage }); }
+                            else { sendNetwork({ type: 'HIT_ENEMY', eId: eid, dmg: b.damage }); }
                             if(b.hitList.length >= b.pierce) b.marked = true;
                         }
                     }
@@ -765,7 +783,7 @@
                         b.hitList.push('boss');
                         spawnParticles(entities.boss.x, entities.boss.y, 5, '#f05', 150);
                         if(isHost) { entities.boss.hp -= b.damage; if(entities.boss.hp<=0){ broadcast({type:'WIN_GAME'}); triggerWin(); } }
-                        else { peer.connect('CHRONO-' + roomCode + '-HOST').send({ type: 'HIT_BOSS', dmg: b.damage }); }
+                        else { sendNetwork({ type: 'HIT_BOSS', dmg: b.damage }); }
                         if(b.hitList.length >= b.pierce) b.marked = true;
                     }
                 }
@@ -796,7 +814,7 @@
                 if(isHost) {
                     broadcast({ type: 'STATE_SYNC', players: networkPlayers, enemies: entities.enemies, gems: entities.gems, boss: entities.boss, shared: sharedState });
                 } else {
-                    peer.connect('CHRONO-' + roomCode + '-HOST').send({ type: 'PLAYER_UPDATE', id: myId, state: networkPlayers[myId] });
+                    sendNetwork({ type: 'PLAYER_UPDATE', id: myId, state: networkPlayers[myId] });
                 }
             }
 
