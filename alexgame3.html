@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>V5 CHRONO-CORE | CO-OP SURVIVAL</title>
+    <title>v6 CHRONO-CORE | CO-OP SURVIVAL</title>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
@@ -42,7 +42,7 @@
         #xpBar { background: #0ff; box-shadow: 0 0 10px #0ff; }
         #ultBar { background: #ff0; box-shadow: 0 0 10px #ff0; }
         
-        #teammates-ui { position: absolute; top: 100px; left: 15px; z-index: 5; }
+        #teammates-ui { position: absolute; top: 180px; left: 15px; z-index: 5; }
         .teammate-card { background: rgba(10,10,15,0.7); border: 1px solid #0ff; padding: 5px 10px; margin-bottom: 5px; width: 180px; }
         .teammate-name { font-size: 0.8rem; font-weight: bold; color: #0ff; margin-bottom: 2px; }
         .tm-bar { height: 8px; background: #333; margin-bottom: 2px; }
@@ -90,7 +90,8 @@
             <div class="bar-container"><div id="ultBar" class="bar-fill" style="width:0%;"></div><div id="ultText" class="bar-text">CORE: 0%</div></div>
         </div>
         <div>
-            <canvas id="minimap"></canvas>
+            <!-- FIXED: Defined HTML width/height to fix halved rendering -->
+            <canvas id="minimap" width="150" height="150"></canvas>
             <div id="timeText">00:00</div>
         </div>
     </div>
@@ -152,6 +153,18 @@
         <button id="btnCycleSpectate" style="width: 250px; background: rgba(0,0,0,0.8);">CYCLE TARGET (CLICK)</button>
     </div>
 
+    <!-- FIXED: Cool Cinematic Victory Screen instead of an alert -->
+    <div id="victoryScreen" class="ui-layer interactive hidden">
+        <div class="panel" style="border-color: #0f0; box-shadow: 0 0 50px rgba(0,255,0,0.3);">
+            <h1 style="color: #0f0; text-shadow: 0 0 20px #0f0;">ANOMALY NEUTRALIZED</h1>
+            <p style="font-size: 1.2rem; color: #fff; text-align: center; margin-bottom: 20px;">The Dreadnaught has been destroyed.</p>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <span style="font-size: 1.5rem; color: #0ff;">FINAL TIME: <span id="victoryTime"></span></span>
+            </div>
+            <button onclick="location.reload()" style="border-color: #0f0; color: #0f0;">RETURN TO BASE</button>
+        </div>
+    </div>
+
     <script>
         /* =====================================================================
            GLOBAL STATE & AUDIO ENGINE
@@ -199,8 +212,8 @@
         const MAP_SIZE = 2500;
         let localPlayer;
         let entities = { enemies: {}, bullets: [], particles:[], gems: {}, boss: null };
-        let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false };
-        let readyUpgrades = 0;
+        let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false, bossDefeated: false };
+        let readyPlayers = new Set(); // FIXED: Uses a Set to perfectly track upgrade readiness
         let nextEntityId = 1;
 
         const keys = { w:false, a:false, s:false, d:false, " ":false };
@@ -250,7 +263,7 @@
                 document.getElementById('mainMenu').classList.add('hidden');
                 document.getElementById('lobbyScreen').classList.remove('hidden');
                 document.getElementById('displayRoomCode').innerText = roomCode;
-                networkPlayers[myId] = { name: myName, id: myId, isHost: role === 'host', ready: true };
+                networkPlayers[myId] = { name: myName, id: myId, isHost: role === 'host' };
                 updateLobbyUI();
 
                 if (role === 'host') {
@@ -292,15 +305,39 @@
                     startGame();
                 }
                 else if (data.type === 'STATE_SYNC' && !isHost) {
-                    entities.enemies = data.enemies; entities.gems = data.gems; entities.boss = data.boss; sharedState = data.shared;
+                    // Sync Remote Shared State
+                    sharedState = data.shared;
+                    
+                    // Client-Side Interpolation Data Injection
+                    for(let eid in data.enemies) {
+                        if(!entities.enemies[eid]) entities.enemies[eid] = data.enemies[eid];
+                        else { entities.enemies[eid].targetX = data.enemies[eid].x; entities.enemies[eid].targetY = data.enemies[eid].y; entities.enemies[eid].hp = data.enemies[eid].hp; }
+                    }
+                    for(let eid in entities.enemies) { if(!data.enemies[eid]) delete entities.enemies[eid]; }
+
+                    for(let gid in data.gems) {
+                        if(!entities.gems[gid]) entities.gems[gid] = data.gems[gid];
+                        else { entities.gems[gid].targetX = data.gems[gid].x; entities.gems[gid].targetY = data.gems[gid].y; }
+                    }
+                    for(let gid in entities.gems) { if(!data.gems[gid]) delete entities.gems[gid]; }
+
+                    if (data.boss) {
+                        if(!entities.boss) entities.boss = data.boss;
+                        else { entities.boss.targetX = data.boss.x; entities.boss.targetY = data.boss.y; entities.boss.hp = data.boss.hp; entities.boss.phase = data.boss.phase; }
+                    } else entities.boss = null;
+
                     for(let pid in data.players) {
                         if(pid !== myId && networkPlayers[pid]) {
                             let rp = data.players[pid]; let p = networkPlayers[pid];
                             p.targetX = rp.x; p.targetY = rp.y; p.angle = rp.angle;
                             p.hp = rp.hp; p.maxHp = rp.maxHp; p.ult = rp.ult; p.dead = rp.dead;
-                            if(p.x === undefined) { p.x = rp.x; p.y = rp.y; } // Init Lerp Pos
+                            if(p.x === undefined) { p.x = rp.x; p.y = rp.y; }
                         }
                     }
+
+                    // Auto-Resume Fail-safe
+                    if (!sharedState.paused && gameState === STATE.UPGRADE) resumeGameClient();
+                    
                     updateHUD();
                 }
                 else if (data.type === 'PLAYER_UPDATE' && isHost) {
@@ -308,10 +345,10 @@
                         let p = networkPlayers[data.id]; let st = data.state;
                         p.targetX = st.x; p.targetY = st.y; p.angle = st.angle;
                         p.hp = st.hp; p.maxHp = st.maxHp; p.ult = st.ult; p.dead = st.dead;
+                        p.magnetRadius = st.magnetRadius; // Crucial for host gem collection
                         if(p.x === undefined) { p.x = st.x; p.y = st.y; }
                     }
                 }
-                // Optimized Bullet Sync
                 else if (data.type === 'SHOOT_EVENT') {
                     let spread = 0.15; let startAngle = data.angle - (spread * (data.multiShot-1)) / 2;
                     for(let i=0; i<data.multiShot; i++) {
@@ -326,19 +363,17 @@
                         e.hp -= data.dmg;
                         if(e.hp <= 0) {
                             sharedState.xp += e.val; delete entities.enemies[data.eId];
-                            broadcast({ type: 'SFX', name: 'exp' }); spawnParticles(e.x, e.y, 8, e.color, 150);
+                            broadcast({ type: 'SFX', name: 'exp' });
+                            spawnParticles(e.x, e.y, 8, e.color, 150);
                             entities.gems[nextEntityId++] = { x: e.x, y: e.y, val: e.val };
                         }
                     }
                 }
                 else if (data.type === 'HIT_BOSS' && isHost) {
-                    if(entities.boss) { entities.boss.hp -= data.dmg; if(entities.boss.hp <= 0) { broadcast({ type: 'WIN_GAME' }); triggerWin(); } }
+                    if(entities.boss) { entities.boss.hp -= data.dmg; if(entities.boss.hp <= 0) { sharedState.bossDefeated = true; broadcast({ type: 'WIN_GAME' }); triggerWin(); } }
                 }
-                else if (data.type === 'COLLECT_GEM' && isHost) {
-                    if(entities.gems[data.gId]) {
-                        sharedState.xp += entities.gems[data.gId].val; delete entities.gems[data.gId];
-                        broadcast({ type: 'SFX', name: 'xp' }); checkLevelUp();
-                    }
+                else if (data.type === 'ADD_ULT') {
+                    if (data.targetId === myId) localPlayer.ultCharge = Math.min(100, localPlayer.ultCharge + data.val);
                 }
                 else if (data.type === 'USE_ULT' && isHost) { triggerEMP(data.x, data.y); }
                 else if (data.type === 'EMP_EFFECT') {
@@ -346,15 +381,18 @@
                     WebAudioSynth.ult(); screenShake = 30;
                 }
                 else if (data.type === 'SFX') { WebAudioSynth[data.name](); }
-                else if (data.type === 'LEVEL_UP') { triggerUpgradeUI(); }
+                else if (data.type === 'LEVEL_UP') { 
+                    if (localPlayer.dead) {
+                        if (isHost) { readyPlayers.add(myId); checkReadyUpgrades(); } 
+                        else sendNetwork({ type: 'UPGRADE_READY', id: myId });
+                    } else triggerUpgradeUI(); 
+                }
                 else if (data.type === 'UPGRADE_READY' && isHost) {
-                    readyUpgrades++;
-                    checkReadyUpgrades(); // Function call to resume if all are ready
+                    readyPlayers.add(data.id || conn.peer);
+                    checkReadyUpgrades(); 
                 }
                 else if (data.type === 'RESUME_GAME') {
-                    document.getElementById('upgradeScreen').classList.add('hidden');
-                    document.getElementById('waitingUpgradesText').classList.add('hidden');
-                    gameState = STATE.PLAYING; lastTime = performance.now();
+                    resumeGameClient();
                 }
                 else if (data.type === 'WIN_GAME') { triggerWin(); }
             });
@@ -363,18 +401,25 @@
                 delete connections[conn.peer];
                 if(networkPlayers[conn.peer]) delete networkPlayers[conn.peer];
                 updateLobbyUI();
-                // Prevent soft-lock if waiting on a player who disconnected
                 if(isHost && gameState === STATE.UPGRADE) checkReadyUpgrades();
             });
         }
 
         function checkReadyUpgrades() {
-            if(readyUpgrades >= Object.keys(networkPlayers).length) {
+            if(readyPlayers.size >= Object.keys(networkPlayers).length) {
                 sharedState.paused = false;
-                document.getElementById('upgradeScreen').classList.add('hidden');
-                document.getElementById('waitingUpgradesText').classList.add('hidden');
-                gameState = STATE.PLAYING; lastTime = performance.now(); // Reset Delta time
+                readyPlayers.clear();
+                resumeGameClient();
                 broadcast({ type: 'RESUME_GAME' });
+            }
+        }
+
+        function resumeGameClient() {
+            document.getElementById('upgradeScreen').classList.add('hidden');
+            document.getElementById('waitingUpgradesText').classList.add('hidden');
+            if(gameState === STATE.UPGRADE) {
+                gameState = STATE.PLAYING; 
+                lastTime = performance.now(); 
             }
         }
 
@@ -409,8 +454,6 @@
                 this.damage = 10; this.pierce = 1; this.multiShot = 1; this.bulletSpeed = 800;
                 this.magnetRadius = 120;
                 this.ultCharge = 0; this.invincTimer = 0; this.ultActiveTimer = 0;
-                
-                // Vampirism Mechanic
                 this.vampChance = 0.0;
             }
             update(dt) {
@@ -453,27 +496,12 @@
                 if(this.ultActiveTimer > 0) this.ultActiveTimer -= dt;
                 if(keys[" "] && this.ultCharge >= 100) this.triggerUlt();
 
-                for(let gid in entities.gems) {
-                    let g = entities.gems[gid];
-                    if(MathUtils.dist(this.x, this.y, g.x, g.y) < this.magnetRadius) {
-                        let a = MathUtils.angle(g.x, g.y, this.x, this.y);
-                        g.x += Math.cos(a) * 400 * dt; g.y += Math.sin(a) * 400 * dt;
-                        if(MathUtils.dist(this.x, this.y, g.x, g.y) < this.r + 5) {
-                            if(isHost) {
-                                sharedState.xp += g.val; checkLevelUp(); delete entities.gems[gid]; WebAudioSynth.xp();
-                            } else {
-                                sendNetwork({ type: 'COLLECT_GEM', gId: gid }); delete entities.gems[gid];
-                            }
-                            this.ultCharge = Math.min(100, this.ultCharge + g.val * 0.5);
-                        }
-                    }
-                }
+                // Note: Gem Magnet Logic moved completely to Host to fix Jitter
             }
             shoot(angle) {
                 WebAudioSynth.shoot();
                 let color = this.ultActiveTimer > 0 ? '#ff0' : '#0ff';
                 
-                // Spawn locally
                 let spread = 0.15; let startAngle = angle - (spread * (this.multiShot-1)) / 2;
                 for(let i=0; i<this.multiShot; i++) {
                     let a = startAngle + (i * spread);
@@ -481,13 +509,11 @@
                 }
                 spawnParticles(this.x, this.y, 2, '#fff', 50, angle + Math.PI, 0.5);
 
-                // OPTIMIZED: Send a single shot event
                 sendNetwork({ type: 'SHOOT_EVENT', x: this.x, y: this.y, angle: angle, speed: this.bulletSpeed, dmg: this.damage, pierce: this.pierce, color: color, multiShot: this.multiShot });
             }
             triggerUlt() {
                 this.ultCharge = 0; this.invincTimer = 5; this.ultActiveTimer = 5;
-                if(isHost) triggerEMP(this.x, this.y);
-                else sendNetwork({ type: 'USE_ULT', x: this.x, y: this.y });
+                if(isHost) triggerEMP(this.x, this.y); else sendNetwork({ type: 'USE_ULT', x: this.x, y: this.y });
             }
             draw(ctx, isLocal) {
                 if(this.dead) return;
@@ -535,6 +561,7 @@
             draw(ctx) { ctx.globalAlpha = Math.max(0, this.life*2); ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=this.color; ctx.fill(); ctx.globalAlpha=1; }
         }
 
+        // Host Only Logic
         function triggerEMP(x, y) {
             broadcast({ type: 'EMP_EFFECT', x, y });
             spawnParticles(x, y, 30, '#ff0', 300);
@@ -553,15 +580,42 @@
             if(sharedState.xp >= sharedState.xpNext) {
                 sharedState.xp -= sharedState.xpNext; sharedState.level++;
                 sharedState.xpNext = Math.floor(sharedState.xpNext * 1.5);
-                sharedState.paused = true; readyUpgrades = 0;
+                sharedState.paused = true; readyPlayers.clear();
                 broadcast({ type: 'LEVEL_UP', shared: sharedState });
-                triggerUpgradeUI();
+                
+                if (localPlayer.dead) {
+                    readyPlayers.add(myId); checkReadyUpgrades();
+                } else triggerUpgradeUI();
             }
         }
 
         function hostUpdateAI(dt) {
             if(sharedState.paused) return;
             sharedState.time += dt;
+
+            // Host handles ALL gem movement
+            for(let gid in entities.gems) {
+                let g = entities.gems[gid]; let target = null; let minDist = Infinity;
+                for(let id in networkPlayers) {
+                    let p = networkPlayers[id];
+                    if(p.dead) continue;
+                    let d = MathUtils.dist(g.x, g.y, p.x, p.y);
+                    let mRad = (p.id === myId) ? localPlayer.magnetRadius : (p.magnetRadius || 120);
+                    if(d < mRad && d < minDist) { minDist = d; target = p; }
+                }
+                if(target) {
+                    let a = MathUtils.angle(g.x, g.y, target.x, target.y);
+                    g.x += Math.cos(a) * 400 * dt; g.y += Math.sin(a) * 400 * dt;
+                    if(minDist < 17) {
+                        sharedState.xp += g.val;
+                        broadcast({ type: 'ADD_ULT', targetId: target.id, val: g.val * 0.5 });
+                        if(target.id === myId) localPlayer.ultCharge = Math.min(100, localPlayer.ultCharge + g.val * 0.5);
+                        delete entities.gems[gid];
+                        broadcast({ type: 'SFX', name: 'xp' });
+                        checkLevelUp();
+                    }
+                }
+            }
 
             if(sharedState.time >= 300 && !entities.boss && !sharedState.bossDefeated) {
                 entities.enemies = {}; 
@@ -611,6 +665,7 @@
             }
         }
 
+        // --- UPGRADES ---
         const UPGRADES =[
             { id: 1, name: "HEAVY CALIBER", desc: "+30% Damage", apply: () => localPlayer.damage *= 1.3 },
             { id: 2, name: "OVERCLOCK", desc: "+20% Fire Rate", apply: () => localPlayer.fireRate *= 0.8 },
@@ -640,16 +695,19 @@
                     container.style.display = 'none';
                     document.getElementById('waitingUpgradesText').classList.remove('hidden');
                     if(isHost) {
-                        readyUpgrades++;
-                        checkReadyUpgrades(); // Use the robust resume function
+                        readyPlayers.add(myId);
+                        checkReadyUpgrades(); 
                     } else {
-                        sendNetwork({ type: 'UPGRADE_READY' });
+                        sendNetwork({ type: 'UPGRADE_READY', id: myId });
                     }
                 };
                 container.appendChild(card);
             });
         }
 
+        /* =====================================================================
+           CORE LOOP & RENDERING
+           ===================================================================== */
         function startGame() {
             document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
@@ -671,8 +729,13 @@
 
         function triggerWin() {
             gameState = STATE.WON;
-            alert("ANOMALY NEUTRALIZED. YOU WIN.");
-            location.reload();
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('teammates-ui').classList.add('hidden');
+            document.getElementById('spectateUI').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.remove('hidden');
+            let m = Math.floor(sharedState.time/60).toString().padStart(2, '0');
+            let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
+            document.getElementById('victoryTime').innerText = `${m}:${s}`;
         }
 
         function findSpectateTarget() {
@@ -700,10 +763,13 @@
             let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
             document.getElementById('timeText').innerText = `${m}:${s}`;
 
-            if(entities.boss) {
+            if(entities.boss && !sharedState.bossDefeated) {
                 document.getElementById('bossWarning').classList.remove('hidden');
                 document.getElementById('bossHpContainer').classList.remove('hidden');
                 document.getElementById('bossHpBar').style.width = `${(entities.boss.hp / entities.boss.maxHp)*100}%`;
+            } else {
+                document.getElementById('bossWarning').classList.add('hidden');
+                document.getElementById('bossHpContainer').classList.add('hidden');
             }
 
             let tmHTML = '';
@@ -728,15 +794,24 @@
         let screenShake = 0;
 
         function update(dt) {
-            // LERP remote players smoothly
+            // FIXED: Apply smooth Linear Interpolation (Lerp) to all networked entities to completely remove lag spikes
             for(let id in networkPlayers) {
                 if(id !== myId) {
                     let p = networkPlayers[id];
-                    if(p.targetX !== undefined) {
-                        p.x += (p.targetX - p.x) * 15 * dt;
-                        p.y += (p.targetY - p.y) * 15 * dt;
-                    }
+                    if(p.targetX !== undefined) { p.x += (p.targetX - p.x) * 15 * dt; p.y += (p.targetY - p.y) * 15 * dt; }
                 }
+            }
+            for(let eid in entities.enemies) {
+                let e = entities.enemies[eid];
+                if (e.targetX !== undefined) { e.x += (e.targetX - e.x) * 15 * dt; e.y += (e.targetY - e.y) * 15 * dt; }
+            }
+            for(let gid in entities.gems) {
+                let g = entities.gems[gid];
+                if (g.targetX !== undefined) { g.x += (g.targetX - g.x) * 15 * dt; g.y += (g.targetY - g.y) * 15 * dt; }
+            }
+            if(entities.boss && entities.boss.targetX !== undefined) {
+                entities.boss.x += (entities.boss.targetX - entities.boss.x) * 15 * dt;
+                entities.boss.y += (entities.boss.targetY - entities.boss.y) * 15 * dt;
             }
 
             let targetX = localPlayer.x, targetY = localPlayer.y;
@@ -770,7 +845,7 @@
                     }
                     if(entities.boss && MathUtils.dist(b.x, b.y, entities.boss.x, entities.boss.y) < b.r + 40 && !b.hitList.includes('boss')) {
                         b.hitList.push('boss'); spawnParticles(entities.boss.x, entities.boss.y, 5, '#f05', 150);
-                        if(isHost) { entities.boss.hp -= b.damage; if(entities.boss.hp<=0){ broadcast({type:'WIN_GAME'}); triggerWin(); } }
+                        if(isHost) { entities.boss.hp -= b.damage; if(entities.boss.hp<=0){ sharedState.bossDefeated = true; broadcast({type:'WIN_GAME'}); triggerWin(); } }
                         else { sendNetwork({ type: 'HIT_BOSS', dmg: b.damage }); }
                         if(b.hitList.length >= b.pierce) b.marked = true;
                     }
@@ -797,13 +872,14 @@
             syncTimer -= dt;
             if(syncTimer <= 0) {
                 syncTimer = 0.05; 
-                networkPlayers[myId] = { name: myName, id: myId, x: localPlayer.x, y: localPlayer.y, hp: localPlayer.hp, maxHp: localPlayer.maxHp, ult: localPlayer.ultCharge, dead: localPlayer.dead, angle: localPlayer.visualAngle };
+                networkPlayers[myId] = { 
+                    name: myName, id: myId, x: localPlayer.x, y: localPlayer.y, 
+                    hp: localPlayer.hp, maxHp: localPlayer.maxHp, ult: localPlayer.ultCharge, 
+                    dead: localPlayer.dead, angle: localPlayer.visualAngle, magnetRadius: localPlayer.magnetRadius 
+                };
                 
-                if(isHost) {
-                    broadcast({ type: 'STATE_SYNC', players: networkPlayers, enemies: entities.enemies, gems: entities.gems, boss: entities.boss, shared: sharedState });
-                } else {
-                    sendNetwork({ type: 'PLAYER_UPDATE', id: myId, state: networkPlayers[myId] });
-                }
+                if(isHost) broadcast({ type: 'STATE_SYNC', players: networkPlayers, enemies: entities.enemies, gems: entities.gems, boss: entities.boss, shared: sharedState });
+                else sendNetwork({ type: 'PLAYER_UPDATE', id: myId, state: networkPlayers[myId] });
             }
 
             updateHUD();
@@ -874,16 +950,16 @@
             for(let id in networkPlayers) { if(!networkPlayers[id].dead) { mctx.fillStyle= id===myId?'#0ff':'#0f0'; mctx.beginPath(); mctx.arc(mX(networkPlayers[id].x), mY(networkPlayers[id].y), 3, 0, Math.PI*2); mctx.fill(); } }
         }
 
-        // FIXED: Loop no longer aborts itself when paused!
+        // FIXED: Loop keeps heartbeat alive even while paused so auto-resume works seamlessly
         function gameLoop(time) {
             requestAnimationFrame(gameLoop);
-            if(gameState !== STATE.PLAYING) {
-                lastTime = time; // Keeps DT smooth while paused
+            if(gameState !== STATE.PLAYING && gameState !== STATE.WON) {
+                lastTime = time; 
                 return;
             }
             dt = Math.min((time - lastTime) / 1000, 0.1); 
             lastTime = time;
-            update(dt); 
+            if (gameState === STATE.PLAYING) update(dt); 
             render(); 
         }
 
