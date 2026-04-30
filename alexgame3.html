@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>V10 CHRONO-CORE | CO-OP SURVIVAL</title>
+    <title>v11 CHRONO-CORE | ENDLESS CO-OP</title>
     
-    <!-- REPLACED PEERJS WITH MQTT FOR FIREWALL BYPASS -->
+    <!-- NETWORK LAYER REPLACED: Bypasses School Firewalls using Secure WebSockets (Port 443) -->
     <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
 
@@ -123,7 +123,7 @@
                 <button id="btnSendChat" style="width: 80px;">SEND</button>
             </div>
             <button id="btnStartGame" class="hidden">INITIALIZE DEPLOYMENT</button>
-            <p id="waitHostText" style="text-align:center; color:#aaa;" class="hidden">Waiting for host to start...</p>
+            <p id="waitHostText" style="text-align:center; color:#aaa;" class="hidden">Connecting to Secure Relay...</p>
         </div>
     </div>
 
@@ -134,7 +134,7 @@
                 <strong>PC:</strong> WASD to move. Mouse to aim. Left Click to fire.<br>
                 <strong>Ultimate:</strong> SPACEBAR (When yellow bar is full)<br>
                 <strong>Mobile:</strong> Twin virtual sticks. Left moves, right aims/fires.<br><br>
-                <strong>Objective:</strong> Survive the endless horde. Share XP to level up. The Dreadnaught arrives every 5 minutes.<br><br>
+                <strong>Objective:</strong> Survive the endless horde. The Dreadnaught arrives every 2 minutes.<br><br>
                 <em>Spectating:</em> Click mouse to cycle teammates when dead.
             </p>
             <button onclick="document.getElementById('controlsScreen').classList.add('hidden')">CLOSE</button>
@@ -153,14 +153,15 @@
         <button id="btnCycleSpectate" style="width: 250px; background: rgba(0,0,0,0.8);">CYCLE TARGET (CLICK)</button>
     </div>
 
-    <div id="victoryScreen" class="ui-layer interactive hidden">
-        <div class="panel" style="border-color: #0f0; box-shadow: 0 0 50px rgba(0,255,0,0.3);">
-            <h1 style="color: #0f0; text-shadow: 0 0 20px #0f0;">ANOMALY NEUTRALIZED</h1>
-            <p style="font-size: 1.2rem; color: #fff; text-align: center; margin-bottom: 20px;">The Dreadnaught has been destroyed.</p>
+    <div id="gameOverScreen" class="ui-layer interactive hidden">
+        <div class="panel" style="border-color: #f05; box-shadow: 0 0 50px rgba(255,0,85,0.3);">
+            <h1 style="color: #f05; text-shadow: 0 0 20px #f05;">SYSTEM FAILURE</h1>
+            <p style="font-size: 1.2rem; color: #fff; text-align: center; margin-bottom: 20px;">The entire squad was wiped out.</p>
             <div style="text-align: center; margin-bottom: 30px;">
-                <span style="font-size: 1.5rem; color: #0ff;">FINAL TIME: <span id="victoryTime"></span></span>
+                <span style="font-size: 1.5rem; color: #0ff;">FINAL TIME: <span id="gameOverTime"></span></span><br>
+                <span style="font-size: 1.2rem; color: #ff0;">WAVES SURVIVED: <span id="gameOverWaves"></span></span>
             </div>
-            <button onclick="location.reload()" style="border-color: #0f0; color: #0f0;">RETURN TO BASE</button>
+            <button onclick="location.reload()" style="border-color: #f05; color: #f05;">REBOOT CORE</button>
         </div>
     </div>
 
@@ -199,7 +200,7 @@
         const mctx = miniCanvas.getContext('2d');
         let cw, ch;
 
-        const STATE = { MENU: 0, LOBBY: 1, PLAYING: 2, UPGRADE: 3, GAMEOVER: 4, WON: 5 };
+        const STATE = { MENU: 0, LOBBY: 1, PLAYING: 2, UPGRADE: 3, GAMEOVER: 4 };
         let gameState = STATE.MENU;
         
         let mqttClient = null;
@@ -232,11 +233,8 @@
         }
 
         /* =====================================================================
-           NETWORKING (MQTT OVER WEBSOCKETS) - BYPASSES ALL SCHOOL FIREWALLS
+           NETWORKING (MQTT OVER SECURE WEBSOCKETS) -> BYPASSES ALL FIREWALLS
            ===================================================================== */
-        const upTopic = () => `CHRONOCORE/${roomCode}/UP`;
-        const downTopic = () => `CHRONOCORE/${roomCode}/DOWN`;
-
         function generateRoomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             let res = ''; for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
@@ -246,72 +244,71 @@
         function initNetwork(role, code) {
             myName = document.getElementById('playerName').value.trim() || 'OPERATIVE';
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
-            myId = role === 'host' ? `HOST-${Math.floor(Math.random()*10000)}` : `CLIENT-${Math.floor(Math.random()*10000)}`;
-            isHost = role === 'host';
+            myId = `CHRONO-${Math.floor(Math.random()*100000)}`;
 
-            // Connects securely over Port 443. Looks like standard encrypted web traffic.
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = roomCode;
+
+            // Connects via Port 443 HTTPS websockets. Firewalls treat this as a standard secure website.
             mqttClient = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt');
 
             mqttClient.on('connect', () => {
-                document.getElementById('mainMenu').classList.add('hidden');
-                document.getElementById('lobbyScreen').classList.remove('hidden');
-                document.getElementById('displayRoomCode').innerText = roomCode;
-
-                networkPlayers[myId] = { name: myName, id: myId, isHost: isHost, lastSeen: Date.now() };
-                updateLobbyUI();
-
-                if (isHost) {
+                if (role === 'host') {
+                    isHost = true;
+                    networkPlayers[myId] = { name: myName, id: myId, isHost: true, dead: false };
                     document.getElementById('btnStartGame').classList.remove('hidden');
-                    mqttClient.subscribe(upTopic());
+                    updateLobbyUI();
+                    
+                    mqttClient.subscribe(`chrono-v1/${roomCode}/client/+`);
                 } else {
                     document.getElementById('waitHostText').classList.remove('hidden');
-                    mqttClient.subscribe(downTopic());
+                    document.getElementById('waitHostText').innerText = "Connected! Waiting for host to start...";
                     
-                    // Continually broadcast HELLO until host acknowledges
-                    let helloInt = setInterval(() => {
-                        if(gameState === STATE.LOBBY) sendNetwork({ type: 'HELLO', id: myId, name: myName });
-                        else clearInterval(helloInt);
-                    }, 1000);
+                    mqttClient.subscribe(`chrono-v1/${roomCode}/host`);
+                    mqttClient.subscribe(`chrono-v1/${roomCode}/client/${myId}`);
+                    
+                    sendNetwork({ type: 'HELLO', id: myId, name: myName });
                 }
             });
 
             mqttClient.on('message', (topic, message) => {
-                const data = JSON.parse(message.toString());
-                if (data.id === myId && data.type !== 'STATE_SYNC') return; // Ignore own echoes
-                handleNetworkData(data);
-            });
+                try {
+                    let data = JSON.parse(message.toString());
+                    
+                    // Prevent circular loopbacks
+                    if (data.senderId === myId && data.type !== 'HELLO') return;
 
-            mqttClient.on('error', (err) => {
-                alert("Network Relay Error. Attempting to reconnect...");
+                    handleNetworkData(data);
+
+                    // Host acts as relay for client events
+                    if (isHost &&['CHAT', 'SHOOT_EVENT', 'HIT_ENEMY', 'HIT_BOSS', 'UPGRADE_READY', 'USE_ULT', 'HELLO'].includes(data.type)) {
+                        sendNetwork(data);
+                    }
+                } catch(e) {}
             });
         }
 
         function sendNetwork(data) {
             if (!mqttClient || !mqttClient.connected) return;
-            data.id = myId;
-            // Compress large numbers before sending to save massive bandwidth
-            const payload = JSON.stringify(data, (key, val) => typeof val === 'number' ? Math.round(val * 10) / 10 : val);
-            
-            if (isHost) mqttClient.publish(downTopic(), payload, { qos: 0 });
-            else mqttClient.publish(upTopic(), payload, { qos: 0 });
+            data.senderId = myId;
+            const topic = isHost ? `chrono-v1/${roomCode}/host` : `chrono-v1/${roomCode}/client/${myId}`;
+            mqttClient.publish(topic, JSON.stringify(data), { qos: 0 });
         }
 
         function handleNetworkData(data) {
-            if (data.type === 'HELLO' && isHost) {
-                if(!networkPlayers[data.id]) {
-                    networkPlayers[data.id] = { name: data.name, id: data.id, lastSeen: Date.now() };
-                    sendNetwork({ type: 'PLAYER_LIST', players: networkPlayers });
-                    updateLobbyUI();
-                }
+            if (data.type === 'HELLO') {
+                networkPlayers[data.id] = { name: data.name, id: data.id, dead: false };
+                if (isHost) sendNetwork({ type: 'PLAYER_LIST', players: networkPlayers });
+                updateLobbyUI();
             }
-            else if (data.type === 'PLAYER_LIST' && !isHost) {
+            else if (data.type === 'PLAYER_LIST') {
                 networkPlayers = data.players; updateLobbyUI();
             }
             else if (data.type === 'CHAT') {
                 addChatMessage(data.name, data.msg);
-                if(isHost) sendNetwork(data); // Relay chat
             }
-            else if (data.type === 'START_GAME' && !isHost) {
+            else if (data.type === 'START_GAME') {
                 startGame();
             }
             else if (data.type === 'STATE_SYNC' && !isHost) {
@@ -345,14 +342,15 @@
 
                 if (!sharedState.paused && gameState === STATE.UPGRADE) resumeGameClient();
                 updateHUD();
+                
+                if (data.gameOver) triggerGameOver();
             }
             else if (data.type === 'PLAYER_UPDATE' && isHost) {
-                if(networkPlayers[data.id]) {
-                    let p = networkPlayers[data.id]; let st = data.state;
+                if(networkPlayers[data.senderId]) {
+                    let p = networkPlayers[data.senderId]; let st = data.state;
                     p.targetX = st.x; p.targetY = st.y; p.angle = st.angle;
                     p.hp = st.hp; p.maxHp = st.maxHp; p.ult = st.ult; p.dead = st.dead;
                     p.magnetRadius = st.magnetRadius; 
-                    p.lastSeen = Date.now();
                     if(p.x === undefined) { p.x = st.x; p.y = st.y; }
                 }
             }
@@ -362,7 +360,6 @@
                     let a = startAngle + (i * spread);
                     entities.bullets.push(new Bullet(data.x, data.y, a, data.speed, data.dmg, data.pierce, data.color));
                 }
-                if(isHost) sendNetwork(data); // Relay
             }
             else if (data.type === 'HIT_ENEMY' && isHost) {
                 let e = entities.enemies[data.eId];
@@ -377,7 +374,16 @@
                 }
             }
             else if (data.type === 'HIT_BOSS' && isHost) {
-                if(entities.boss) { entities.boss.hp -= data.dmg; if(entities.boss.hp <= 0) { sharedState.bossDefeated = true; sendNetwork({ type: 'WIN_GAME' }); triggerWin(); } }
+                if(entities.boss) { 
+                    entities.boss.hp -= data.dmg; 
+                    if(entities.boss.hp <= 0) { 
+                        sharedState.bossLevel++;
+                        sharedState.xp += 5000;
+                        entities.boss = null;
+                        sendNetwork({ type: 'SFX', name: 'exp' });
+                        checkLevelUp();
+                    } 
+                }
             }
             else if (data.type === 'ADD_ULT') {
                 if (data.targetId === myId) localPlayer.ultCharge = Math.min(100, localPlayer.ultCharge + data.val);
@@ -391,11 +397,11 @@
             else if (data.type === 'LEVEL_UP') { 
                 if (localPlayer.dead) {
                     if (isHost) { readyPlayers.add(myId); checkReadyUpgrades(); } 
-                    else sendNetwork({ type: 'UPGRADE_READY', targetId: myId });
+                    else sendNetwork({ type: 'UPGRADE_READY' });
                 } else triggerUpgradeUI(); 
             }
             else if (data.type === 'UPGRADE_READY' && isHost) {
-                readyPlayers.add(data.targetId || data.id);
+                readyPlayers.add(data.senderId);
                 checkReadyUpgrades(); 
             }
             else if (data.type === 'RESUME_GAME') {
@@ -404,9 +410,7 @@
         }
 
         function checkReadyUpgrades() {
-            // Count actual alive/connected players
-            let activeCount = Object.values(networkPlayers).filter(p => !p.dropped).length;
-            if(readyPlayers.size >= activeCount) {
+            if(readyPlayers.size >= Object.keys(networkPlayers).length) {
                 sharedState.paused = false;
                 readyPlayers.clear();
                 resumeGameClient();
@@ -438,9 +442,7 @@
 
         function updateLobbyUI() {
             let html = '';
-            for(let k in networkPlayers) {
-                if(!networkPlayers[k].dropped) html += `<div class="player-item">► ${networkPlayers[k].name} ${networkPlayers[k].isHost ? '(HOST)' : ''}</div>`;
-            }
+            for(let k in networkPlayers) html += `<div class="player-item">► ${networkPlayers[k].name} ${networkPlayers[k].isHost ? '(HOST)' : ''}</div>`;
             document.getElementById('lobbyPlayers').innerHTML = html;
         }
 
@@ -518,10 +520,10 @@
             draw(ctx, isLocal) {
                 if(this.dead) return;
                 ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.visualAngle);
-                
-                // OPTIMIZATION: Disabled shadowBlur for player to save Chromebook GPU. Replaced with composite operations.
                 ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10); ctx.closePath();
-                ctx.fillStyle = this.invincTimer > 0 ? '#ff0' : (isLocal ? '#0ff' : '#0f0');
+                ctx.fillStyle = this.color; 
+                ctx.shadowBlur = this.invincTimer > 0 ? 30 : 15; 
+                ctx.shadowColor = this.invincTimer > 0 ? '#ff0' : (isLocal ? '#0ff' : '#0f0');
                 ctx.fill(); ctx.restore();
 
                 if(isLocal) {
@@ -548,10 +550,7 @@
                 this.hitList =[]; this.life = 1.5; this.marked = false;
             }
             update(dt) { this.x += this.vx*dt; this.y += this.vy*dt; this.life -= dt; if(this.life<=0) this.marked = true; }
-            draw(ctx) { 
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fillStyle=this.color; 
-                ctx.fill(); // OPTIMIZED: Removed shadowBlur
-            }
+            draw(ctx) { ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2); ctx.fillStyle=this.color; ctx.shadowBlur=10; ctx.shadowColor=this.color; ctx.fill(); }
         }
 
         class Particle {
@@ -610,21 +609,20 @@
             if(sharedState.paused) return;
             sharedState.time += dt;
 
-            // Handle Dropouts
-            for(let id in networkPlayers) {
-                if(id !== myId && !networkPlayers[id].dropped) {
-                    if (Date.now() - networkPlayers[id].lastSeen > 4000) {
-                        networkPlayers[id].dropped = true; // Mark as dropped
-                        if(gameState === STATE.UPGRADE) checkReadyUpgrades();
-                    }
-                }
+            // Check if everyone is dead
+            let allDead = localPlayer.dead;
+            for(let p in networkPlayers) { if(p !== myId && !networkPlayers[p].dead) allDead = false; }
+            if(allDead && gameState === STATE.PLAYING) {
+                triggerGameOver();
+                sendNetwork({ type: 'STATE_SYNC', shared: sharedState, gameOver: true });
+                return;
             }
 
             for(let gid in entities.gems) {
                 let g = entities.gems[gid]; let target = null; let minDist = Infinity;
                 for(let id in networkPlayers) {
                     let p = networkPlayers[id];
-                    if(p.dead || p.dropped) continue;
+                    if(p.dead) continue;
                     let d = MathUtils.dist(g.x, g.y, p.x, p.y);
                     let mRad = (p.id === myId) ? localPlayer.magnetRadius : (p.magnetRadius || 120);
                     if(d < mRad && d < minDist) { minDist = d; target = p; }
@@ -643,19 +641,20 @@
                 }
             }
 
-            // Endless Boss Spawning - Every 5 minutes (300s)
-            if(sharedState.time >= sharedState.bossLevel * 300 && !entities.boss) {
+            // Endless Boss Spawning - Every 2 minutes (120s)
+            if(sharedState.time >= sharedState.bossLevel * 120 && !entities.boss) {
                 entities.enemies = {}; 
                 let hp = 5000 * Object.keys(networkPlayers).length * sharedState.bossLevel;
-                let target = Object.values(networkPlayers).find(p => !p.dead && !p.dropped) || localPlayer;
+                let target = Object.values(networkPlayers).find(p => !p.dead) || localPlayer;
                 entities.boss = { x: target.x, y: target.y - 1200, hp: hp, maxHp: hp, phase: 0, timer: 0 };
                 sendNetwork({ type: 'SFX', name: 'ult' });
             }
 
             // Per-Player Dynamic Spawning
             if(!entities.boss) {
-                let baseRate = Math.max(0.15, 1.5 - (sharedState.time * 0.0015));[localPlayer, ...Object.values(networkPlayers)].forEach(target => {
-                    if(target && !target.dead && !target.dropped) {
+                let baseRate = Math.max(0.1, 1.5 - (sharedState.time * 0.002)); 
+                [localPlayer, ...Object.values(networkPlayers)].forEach(target => {
+                    if(target && !target.dead && target.x !== undefined) {
                         if(Math.random() < (dt / baseRate)) {
                             let angle = Math.random() * Math.PI * 2;
                             let type = Math.random() > 0.8 ? 2 : 1;
@@ -668,26 +667,25 @@
                 });
             }
 
-            // Dynamic Endless Boss Movement & Attacks
             if(entities.boss) {
                 let b = entities.boss; 
-                
                 let closest = null, minDist = Infinity;[localPlayer, ...Object.values(networkPlayers)].forEach(p => {
-                    if(!p.dead && !p.dropped) { let d = MathUtils.dist(b.x, b.y, p.x, p.y); if(d < minDist){ minDist=d; closest=p; } }
+                    if(!p.dead) { let d = MathUtils.dist(b.x, b.y, p.x, p.y); if(d < minDist){ minDist=d; closest=p; } }
                 });
                 if(closest) {
                     let a = MathUtils.angle(b.x, b.y, closest.x, closest.y);
                     let bSpeed = 40 + (sharedState.bossLevel * 10);
-                    b.x += Math.cos(a) * bSpeed * dt; b.y += Math.sin(a) * bSpeed * dt;
+                    b.x += Math.cos(a) * bSpeed * dt;
+                    b.y += Math.sin(a) * bSpeed * dt;
                 }
 
                 b.timer -= dt;
                 if(b.timer <= 0) {
-                    b.timer = Math.max(0.4, 1.2 - (sharedState.bossLevel * 0.1));
-                    let bCount = 12 + (sharedState.bossLevel * 4);
+                    b.timer = Math.max(0.3, 1.0 - (sharedState.bossLevel * 0.1));
+                    let bCount = 12 + (sharedState.bossLevel * 2);
                     for(let i=0; i<bCount; i++) {
                         let a = (Math.PI*2/bCount) * i + (b.phase * 0.1);
-                        sendNetwork({ type: 'SPAWN_BULLET', x: b.x, y: b.y, angle: a, speed: 300, dmg: 20, pierce: 1, color: '#f05', multiShot: 1 });
+                        sendNetwork({ type: 'SPAWN_BULLET', x: b.x, y: b.y, angle: a, speed: 300, dmg: 20, pierce: 1, color: '#f05' });
                         entities.bullets.push(new Bullet(b.x, b.y, a, 300, 20, 1, '#f05'));
                     }
                     b.phase++;
@@ -697,7 +695,7 @@
             for(let eid in entities.enemies) {
                 let e = entities.enemies[eid];
                 let closest = null, minDist = Infinity;[localPlayer, ...Object.values(networkPlayers)].forEach(p => {
-                    if(!p.dead && !p.dropped) { let d = MathUtils.dist(e.x,e.y,p.x,p.y); if(d < minDist){ minDist=d; closest=p; } }
+                    if(!p.dead) { let d = MathUtils.dist(e.x,e.y,p.x,p.y); if(d < minDist){ minDist=d; closest=p; } }
                 });
                 if(closest) {
                     let a = MathUtils.angle(e.x, e.y, closest.x, closest.y);
@@ -739,7 +737,7 @@
                         readyPlayers.add(myId);
                         checkReadyUpgrades(); 
                     } else {
-                        sendNetwork({ type: 'UPGRADE_READY', id: myId });
+                        sendNetwork({ type: 'UPGRADE_READY' });
                     }
                 };
                 container.appendChild(card);
@@ -768,18 +766,25 @@
             if(isHost) sendNetwork({ type: 'START_GAME' });
         }
 
-        function triggerWin() {
-            // Endless mode: Do not show victory screen, just keep playing!
-            // This is handled by the Host giving 5000 XP in hostUpdateAI
+        function triggerGameOver() {
+            gameState = STATE.GAMEOVER;
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('teammates-ui').classList.add('hidden');
+            document.getElementById('spectateUI').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            let m = Math.floor(sharedState.time/60).toString().padStart(2, '0');
+            let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
+            document.getElementById('gameOverTime').innerText = `${m}:${s}`;
+            document.getElementById('gameOverWaves').innerText = sharedState.bossLevel - 1;
         }
 
         function findSpectateTarget() {
-            let alive = Object.values(networkPlayers).filter(p => !p.dead && !p.dropped && p.id !== myId);
+            let alive = Object.values(networkPlayers).filter(p => !p.dead && p.id !== myId);
             if(alive.length > 0) spectateTargetId = alive[0].id; else spectateTargetId = null;
         }
 
         document.getElementById('btnCycleSpectate').addEventListener('click', () => {
-            let alive = Object.values(networkPlayers).filter(p => !p.dead && !p.dropped && p.id !== myId);
+            let alive = Object.values(networkPlayers).filter(p => !p.dead && p.id !== myId);
             if(alive.length === 0) return;
             let idx = alive.findIndex(p => p.id === spectateTargetId);
             spectateTargetId = alive[(idx + 1) % alive.length].id;
@@ -798,7 +803,7 @@
             let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
             document.getElementById('timeText').innerText = `${m}:${s}`;
 
-            if(entities.boss && !sharedState.bossDefeated) {
+            if(entities.boss) {
                 document.getElementById('bossWarning').classList.remove('hidden');
                 document.getElementById('bossWarning').innerHTML = `ANOMALY DETECTED<br>DREADNAUGHT MK-${sharedState.bossLevel}`;
                 document.getElementById('bossHpContainer').classList.remove('hidden');
@@ -810,7 +815,7 @@
 
             let tmHTML = '';
             for(let id in networkPlayers) {
-                if(id !== myId && !networkPlayers[id].dropped) {
+                if(id !== myId) {
                     let p = networkPlayers[id];
                     let hpP = p.maxHp ? (Math.max(0,p.hp)/p.maxHp)*100 : 100;
                     let ultP = p.ult || 0;
@@ -833,7 +838,7 @@
             for(let id in networkPlayers) {
                 if(id !== myId) {
                     let p = networkPlayers[id];
-                    if(p.targetX !== undefined && !p.dropped) { p.x += (p.targetX - p.x) * 15 * dt; p.y += (p.targetY - p.y) * 15 * dt; }
+                    if(p.targetX !== undefined) { p.x += (p.targetX - p.x) * 15 * dt; p.y += (p.targetY - p.y) * 15 * dt; }
                 }
             }
             for(let eid in entities.enemies) {
@@ -923,8 +928,7 @@
                 networkPlayers[myId] = { 
                     name: myName, id: myId, x: localPlayer.x, y: localPlayer.y, 
                     hp: localPlayer.hp, maxHp: localPlayer.maxHp, ult: localPlayer.ultCharge, 
-                    dead: localPlayer.dead, angle: localPlayer.visualAngle, magnetRadius: localPlayer.magnetRadius,
-                    lastSeen: Date.now()
+                    dead: localPlayer.dead, angle: localPlayer.visualAngle, magnetRadius: localPlayer.magnetRadius 
                 };
                 
                 if(isHost) sendNetwork({ type: 'STATE_SYNC', players: networkPlayers, enemies: entities.enemies, gems: entities.gems, boss: entities.boss, shared: sharedState });
@@ -954,18 +958,15 @@
             
             drawGrid(ctx);
             
-            // OPTIMIZED BLENDING FOR CHROMEBOOKS
-            ctx.globalCompositeOperation = 'lighter';
-
             for(let gid in entities.gems) {
-                let g = entities.gems[gid]; ctx.fillStyle = '#0f0'; ctx.fillRect(g.x-4, g.y-4, 8, 8);
+                let g = entities.gems[gid]; ctx.fillStyle = '#0f0'; ctx.shadowBlur = 10; ctx.shadowColor = '#0f0'; ctx.fillRect(g.x-4, g.y-4, 8, 8); ctx.shadowBlur = 0;
             }
             
             if(entities.boss) {
                 let b = entities.boss;
                 ctx.beginPath(); ctx.arc(b.x, b.y, 40, 0, Math.PI*2);
-                ctx.fillStyle = '#111'; ctx.strokeStyle = '#f05'; ctx.lineWidth = 4; 
-                ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#111'; ctx.strokeStyle = '#f05'; ctx.lineWidth = 4; ctx.shadowBlur = 30; ctx.shadowColor = '#f05';
+                ctx.fill(); ctx.stroke(); ctx.shadowBlur = 0;
                 ctx.beginPath(); ctx.arc(b.x, b.y, 10 + Math.sin(sharedState.time*5)*5, 0, Math.PI*2);
                 ctx.fillStyle = '#f05'; ctx.fill();
             }
@@ -973,21 +974,19 @@
             for(let eid in entities.enemies) {
                 let e = entities.enemies[eid];
                 ctx.beginPath(); ctx.arc(e.x, e.y, e.type === 1 ? 10 : 6, 0, Math.PI*2);
-                ctx.fillStyle = e.type === 1 ? '#f05' : '#f0f'; ctx.fill();
+                ctx.fillStyle = e.type === 1 ? '#f05' : '#f0f'; ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle; ctx.fill(); ctx.shadowBlur = 0;
             }
             
             entities.bullets.forEach(b => b.draw(ctx));
             entities.particles.forEach(p => p.draw(ctx));
-            
-            ctx.globalCompositeOperation = 'source-over'; // Reset for text and player names
             entities.texts.forEach(t => t.draw(ctx));
 
             for(let id in networkPlayers) {
-                if(id !== myId && !networkPlayers[id].dead && !networkPlayers[id].dropped) {
+                if(id !== myId && !networkPlayers[id].dead) {
                     let p = networkPlayers[id];
                     ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
                     ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(-10, 10); ctx.lineTo(-10, -10); ctx.closePath();
-                    ctx.fillStyle = '#fff'; ctx.fill(); ctx.restore();
+                    ctx.fillStyle = '#fff'; ctx.shadowBlur = 15; ctx.shadowColor = '#0f0'; ctx.fill(); ctx.restore();
                     ctx.fillStyle = '#0f0'; ctx.font = '10px Orbitron'; ctx.textAlign = 'center'; ctx.fillText(p.name, p.x, p.y - 20);
                 }
             }
@@ -1002,18 +1001,18 @@
             
             for(let eid in entities.enemies) { mctx.fillStyle='#f05'; mctx.fillRect(mX(entities.enemies[eid].x), mY(entities.enemies[eid].y), 2, 2); }
             if(entities.boss) { mctx.fillStyle='#f05'; mctx.beginPath(); mctx.arc(mX(entities.boss.x), mY(entities.boss.y), 4, 0, Math.PI*2); mctx.fill(); }
-            for(let id in networkPlayers) { if(!networkPlayers[id].dead && !networkPlayers[id].dropped) { mctx.fillStyle= id===myId?'#0ff':'#0f0'; mctx.beginPath(); mctx.arc(mX(networkPlayers[id].x), mY(networkPlayers[id].y), 3, 0, Math.PI*2); mctx.fill(); } }
+            for(let id in networkPlayers) { if(!networkPlayers[id].dead) { mctx.fillStyle= id===myId?'#0ff':'#0f0'; mctx.beginPath(); mctx.arc(mX(networkPlayers[id].x), mY(networkPlayers[id].y), 3, 0, Math.PI*2); mctx.fill(); } }
         }
 
         function gameLoop(time) {
             requestAnimationFrame(gameLoop);
-            if(gameState !== STATE.PLAYING && gameState !== STATE.WON) {
+            if(gameState !== STATE.PLAYING) {
                 lastTime = time; 
                 return;
             }
             dt = Math.min((time - lastTime) / 1000, 0.1); 
             lastTime = time;
-            if (gameState === STATE.PLAYING) update(dt); 
+            update(dt); 
             render(); 
         }
 
