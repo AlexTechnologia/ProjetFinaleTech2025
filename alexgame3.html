@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CHRONO-CORE | CO-OP SURVIVAL</title>
+    <title>V5 CHRONO-CORE | CO-OP SURVIVAL</title>
     
-    <!-- Dependencies: PeerJS for Networking, NippleJS for Mobile Controls -->
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
 
@@ -29,7 +28,6 @@
         button { width: 100%; background: #000; color: #0ff; border: 2px solid #0ff; padding: 12px; font-family: 'Orbitron'; font-size: 1.2rem; cursor: pointer; transition: 0.2s; margin-bottom: 10px; font-weight: bold; }
         button:hover { background: #0ff; color: #000; box-shadow: 0 0 15px #0ff; }
         
-        /* Layouts */
         .flex-row { display: flex; gap: 10px; }
         .chat-box { height: 150px; background: rgba(0,0,0,0.5); border: 1px solid #444; overflow-y: auto; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
         .player-list { background: rgba(0,255,255,0.1); padding: 10px; border: 1px solid #0ff; margin-bottom: 15px; min-height: 50px; }
@@ -54,13 +52,11 @@
         #minimap { position: absolute; top: 15px; right: 15px; width: 150px; height: 150px; background: rgba(0, 0, 0, 0.6); border: 2px solid #0ff; z-index: 5; }
         #timeText { position: absolute; top: 175px; right: 15px; font-size: 1.5rem; font-weight: bold; color: #fff; text-shadow: 0 0 10px #0ff; z-index: 5; }
 
-        /* Boss Warning */
         #bossWarning { position: absolute; top: 20%; width: 100%; text-align: center; color: #f05; font-size: 3rem; font-weight: bold; text-shadow: 0 0 30px #f05; animation: flash 1s infinite; z-index: 20; }
         @keyframes flash { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
         #bossHpContainer { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 60%; height: 30px; background: rgba(0,0,0,0.8); border: 3px solid #f05; z-index: 20; }
         #bossHpBar { height: 100%; background: #f05; width: 100%; transition: width 0.1s; }
 
-        /* Upgrades & Modals */
         #upgradeScreen { background: rgba(0,0,0,0.9); }
         .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 30px; }
         .card { width: 220px; background: rgba(20,20,30,0.9); border: 2px solid #0ff; padding: 25px 20px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
@@ -73,7 +69,6 @@
         #leftZone { left: 0; } #rightZone { right: 0; }
         body.playing.touch-device .joystick-zone { pointer-events: auto; }
 
-        /* Ultimate Button for Mobile */
         #ultButtonMobile { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); width: 80px; height: 80px; background: rgba(255, 255, 0, 0.2); border: 3px solid #ff0; border-radius: 50%; z-index: 6; color: #ff0; font-weight: bold; font-family: 'Orbitron'; cursor: pointer; display: none; }
         body.playing.touch-device #ultButtonMobile { display: block; }
         #ultButtonMobile:active { background: #ff0; color: #000; }
@@ -87,7 +82,6 @@
     <div id="rightZone" class="joystick-zone"></div>
     <button id="ultButtonMobile" class="interactive">ULT</button>
 
-    <!-- UI: HUD -->
     <div id="hud" class="hidden">
         <div>
             <div style="font-size: 1.2rem; margin-bottom: 5px;" id="levelText">TEAM LEVEL 1</div>
@@ -101,14 +95,10 @@
         </div>
     </div>
     
-    <!-- UI: Teammates -->
     <div id="teammates-ui" class="hidden"></div>
-
-    <!-- UI: Boss Elements -->
     <div id="bossWarning" class="hidden">ANOMALY DETECTED<br>THE DREADNAUGHT</div>
     <div id="bossHpContainer" class="hidden"><div id="bossHpBar"></div></div>
 
-    <!-- Main Menu -->
     <div id="mainMenu" class="ui-layer interactive">
         <div class="panel">
             <h1>CHRONO-CORE</h1>
@@ -122,7 +112,6 @@
         </div>
     </div>
 
-    <!-- Lobby Screen -->
     <div id="lobbyScreen" class="ui-layer interactive hidden">
         <div class="panel">
             <h2>LOBBY: <span id="displayRoomCode" style="color:#fff;">----</span></h2>
@@ -137,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Controls Screen -->
     <div id="controlsScreen" class="ui-layer interactive hidden">
         <div class="panel">
             <h2 style="color: #0ff;">SYSTEM MANUAL</h2>
@@ -145,14 +133,13 @@
                 <strong>PC:</strong> WASD to move. Mouse to aim. Left Click to fire.<br>
                 <strong>Ultimate:</strong> SPACEBAR (When yellow bar is full)<br>
                 <strong>Mobile:</strong> Twin virtual sticks. Left moves, right aims/fires.<br><br>
-                <strong>Objective:</strong> Survive the horde. Share XP to level up. At 5:00, the Dreadnaught arrives. Kill it to win.<br><br>
+                <strong>Objective:</strong> Survive the horde. Share XP to level up. At 5:00, the Dreadnaught arrives.<br><br>
                 <em>Spectating:</em> Click mouse to cycle teammates when dead.
             </p>
             <button onclick="document.getElementById('controlsScreen').classList.add('hidden')">CLOSE</button>
         </div>
     </div>
 
-    <!-- Upgrades Screen -->
     <div id="upgradeScreen" class="ui-layer interactive hidden">
         <h1 style="color: #0ff; text-shadow: 0 0 20px #0ff;">SYSTEM OVERCLOCK</h1>
         <p style="font-size: 1.2rem; color: #fff;">Select your enhancement protocol:</p>
@@ -160,7 +147,6 @@
         <p id="waitingUpgradesText" class="hidden" style="margin-top: 20px; color: #ff0;">Waiting for team to select...</p>
     </div>
 
-    <!-- Spectate UI -->
     <div id="spectateUI" class="hidden">
         <h2 style="color: #f05;">CRITICAL DAMAGE - SPECTATING</h2>
         <button id="btnCycleSpectate" style="width: 250px; background: rgba(0,0,0,0.8);">CYCLE TARGET (CLICK)</button>
@@ -204,14 +190,12 @@
         const STATE = { MENU: 0, LOBBY: 1, PLAYING: 2, UPGRADE: 3, GAMEOVER: 4, WON: 5 };
         let gameState = STATE.MENU;
         
-        // P2P Networking
         let peer, myId, myName, isHost = false;
-        let connections = {}; // Stores all connected peers
-        let hostConn = null;  // Persistent Data Channel for Clients connecting to the Host
+        let connections = {}; 
+        let hostConn = null;  
         let networkPlayers = {}; 
         let roomCode = "";
 
-        // Game World
         const MAP_SIZE = 2500;
         let localPlayer;
         let entities = { enemies: {}, bullets: [], particles:[], gems: {}, boss: null };
@@ -219,7 +203,6 @@
         let readyUpgrades = 0;
         let nextEntityId = 1;
 
-        // Input
         const keys = { w:false, a:false, s:false, d:false, " ":false };
         const mouse = { x: 0, y: 0, down: false };
         let touchInput = { move: { active: false, x: 0, y: 0 }, aim: { active: false, angle: 0 } };
@@ -238,7 +221,7 @@
         }
 
         /* =====================================================================
-           NETWORKING (PEERJS) - REWRITTEN FOR STABILITY
+           NETWORKING (PEERJS)
            ===================================================================== */
         function generateRoomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -248,25 +231,19 @@
 
         function broadcast(data, excludePeerId = null) {
             for(let key in connections) {
-                if(key !== excludePeerId && connections[key].open) {
-                    connections[key].send(data);
-                }
+                if(key !== excludePeerId && connections[key].open) connections[key].send(data);
             }
         }
 
         function sendNetwork(data) {
-            if (isHost) {
-                broadcast(data); // Host broadcasts to all clients
-            } else if (hostConn && hostConn.open) {
-                hostConn.send(data); // Client streams to Host
-            }
+            if (isHost) broadcast(data); 
+            else if (hostConn && hostConn.open) hostConn.send(data); 
         }
 
         function initPeer(role, code) {
             myName = document.getElementById('playerName').value.trim() || 'OPERATIVE';
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
             myId = 'CHRONO-' + roomCode + '-' + Math.floor(Math.random()*10000);
-
             peer = new Peer(myId, { debug: 1 });
 
             peer.on('open', id => {
@@ -281,7 +258,6 @@
                     document.getElementById('btnStartGame').classList.remove('hidden');
                 } else {
                     document.getElementById('waitHostText').classList.remove('hidden');
-                    // CLIENT: Open exactly ONE persistent data channel to the host
                     hostConn = peer.connect('CHRONO-' + roomCode + '-HOST');
                     setupConnection(hostConn);
                 }
@@ -310,27 +286,39 @@
                 }
                 else if (data.type === 'CHAT') {
                     addChatMessage(data.name, data.msg);
-                    if(isHost) broadcast(data, conn.peer); // Host Relays Chat
+                    if(isHost) broadcast(data, conn.peer); 
                 }
                 else if (data.type === 'START_GAME') {
                     startGame();
                 }
                 else if (data.type === 'STATE_SYNC' && !isHost) {
-                    entities.enemies = data.enemies;
-                    entities.gems = data.gems;
-                    entities.boss = data.boss;
-                    sharedState = data.shared;
+                    entities.enemies = data.enemies; entities.gems = data.gems; entities.boss = data.boss; sharedState = data.shared;
                     for(let pid in data.players) {
-                        if(pid !== myId && networkPlayers[pid]) Object.assign(networkPlayers[pid], data.players[pid]);
+                        if(pid !== myId && networkPlayers[pid]) {
+                            let rp = data.players[pid]; let p = networkPlayers[pid];
+                            p.targetX = rp.x; p.targetY = rp.y; p.angle = rp.angle;
+                            p.hp = rp.hp; p.maxHp = rp.maxHp; p.ult = rp.ult; p.dead = rp.dead;
+                            if(p.x === undefined) { p.x = rp.x; p.y = rp.y; } // Init Lerp Pos
+                        }
                     }
                     updateHUD();
                 }
                 else if (data.type === 'PLAYER_UPDATE' && isHost) {
-                    if(networkPlayers[data.id]) Object.assign(networkPlayers[data.id], data.state);
+                    if(networkPlayers[data.id]) {
+                        let p = networkPlayers[data.id]; let st = data.state;
+                        p.targetX = st.x; p.targetY = st.y; p.angle = st.angle;
+                        p.hp = st.hp; p.maxHp = st.maxHp; p.ult = st.ult; p.dead = st.dead;
+                        if(p.x === undefined) { p.x = st.x; p.y = st.y; }
+                    }
                 }
-                else if (data.type === 'SPAWN_BULLET') {
-                    entities.bullets.push(new Bullet(data.x, data.y, data.angle, data.speed, data.dmg, data.pierce, data.color));
-                    if(isHost) broadcast(data, conn.peer); // Host Relays Bullets to others
+                // Optimized Bullet Sync
+                else if (data.type === 'SHOOT_EVENT') {
+                    let spread = 0.15; let startAngle = data.angle - (spread * (data.multiShot-1)) / 2;
+                    for(let i=0; i<data.multiShot; i++) {
+                        let a = startAngle + (i * spread);
+                        entities.bullets.push(new Bullet(data.x, data.y, a, data.speed, data.dmg, data.pierce, data.color));
+                    }
+                    if(isHost) broadcast(data, conn.peer); 
                 }
                 else if (data.type === 'HIT_ENEMY' && isHost) {
                     let e = entities.enemies[data.eId];
@@ -338,29 +326,21 @@
                         e.hp -= data.dmg;
                         if(e.hp <= 0) {
                             sharedState.xp += e.val; delete entities.enemies[data.eId];
-                            broadcast({ type: 'SFX', name: 'exp' });
-                            spawnParticles(e.x, e.y, 8, e.color, 150);
+                            broadcast({ type: 'SFX', name: 'exp' }); spawnParticles(e.x, e.y, 8, e.color, 150);
                             entities.gems[nextEntityId++] = { x: e.x, y: e.y, val: e.val };
                         }
                     }
                 }
                 else if (data.type === 'HIT_BOSS' && isHost) {
-                    if(entities.boss) {
-                        entities.boss.hp -= data.dmg;
-                        if(entities.boss.hp <= 0) { broadcast({ type: 'WIN_GAME' }); triggerWin(); }
-                    }
+                    if(entities.boss) { entities.boss.hp -= data.dmg; if(entities.boss.hp <= 0) { broadcast({ type: 'WIN_GAME' }); triggerWin(); } }
                 }
                 else if (data.type === 'COLLECT_GEM' && isHost) {
                     if(entities.gems[data.gId]) {
-                        sharedState.xp += entities.gems[data.gId].val;
-                        delete entities.gems[data.gId];
-                        broadcast({ type: 'SFX', name: 'xp' });
-                        checkLevelUp();
+                        sharedState.xp += entities.gems[data.gId].val; delete entities.gems[data.gId];
+                        broadcast({ type: 'SFX', name: 'xp' }); checkLevelUp();
                     }
                 }
-                else if (data.type === 'USE_ULT' && isHost) { 
-                    triggerEMP(data.x, data.y); 
-                }
+                else if (data.type === 'USE_ULT' && isHost) { triggerEMP(data.x, data.y); }
                 else if (data.type === 'EMP_EFFECT') {
                     spawnParticles(data.x, data.y, 30, '#ff0', 300);
                     WebAudioSynth.ult(); screenShake = 30;
@@ -369,12 +349,11 @@
                 else if (data.type === 'LEVEL_UP') { triggerUpgradeUI(); }
                 else if (data.type === 'UPGRADE_READY' && isHost) {
                     readyUpgrades++;
-                    if(readyUpgrades >= Object.keys(networkPlayers).length) {
-                        sharedState.paused = false; broadcast({ type: 'RESUME_GAME' });
-                    }
+                    checkReadyUpgrades(); // Function call to resume if all are ready
                 }
                 else if (data.type === 'RESUME_GAME') {
                     document.getElementById('upgradeScreen').classList.add('hidden');
+                    document.getElementById('waitingUpgradesText').classList.add('hidden');
                     gameState = STATE.PLAYING; lastTime = performance.now();
                 }
                 else if (data.type === 'WIN_GAME') { triggerWin(); }
@@ -384,14 +363,25 @@
                 delete connections[conn.peer];
                 if(networkPlayers[conn.peer]) delete networkPlayers[conn.peer];
                 updateLobbyUI();
+                // Prevent soft-lock if waiting on a player who disconnected
+                if(isHost && gameState === STATE.UPGRADE) checkReadyUpgrades();
             });
+        }
+
+        function checkReadyUpgrades() {
+            if(readyUpgrades >= Object.keys(networkPlayers).length) {
+                sharedState.paused = false;
+                document.getElementById('upgradeScreen').classList.add('hidden');
+                document.getElementById('waitingUpgradesText').classList.add('hidden');
+                gameState = STATE.PLAYING; lastTime = performance.now(); // Reset Delta time
+                broadcast({ type: 'RESUME_GAME' });
+            }
         }
 
         function sendChat() {
             let msg = document.getElementById('chatInput').value.trim();
             if(!msg) return;
-            addChatMessage(myName, msg); 
-            sendNetwork({ type: 'CHAT', name: myName, msg: msg });
+            addChatMessage(myName, msg); sendNetwork({ type: 'CHAT', name: myName, msg: msg });
             document.getElementById('chatInput').value = '';
         }
 
@@ -415,20 +405,19 @@
                 this.x = x; this.y = y; this.r = 12; this.color = '#fff';
                 this.speed = 280; this.maxHp = 100; this.hp = 100;
                 this.dead = false; this.visualAngle = 0;
-                
                 this.shootTimer = 0; this.fireRate = 0.25; 
                 this.damage = 10; this.pierce = 1; this.multiShot = 1; this.bulletSpeed = 800;
                 this.magnetRadius = 120;
-                
                 this.ultCharge = 0; this.invincTimer = 0; this.ultActiveTimer = 0;
+                
+                // Vampirism Mechanic
+                this.vampChance = 0.0;
             }
             update(dt) {
                 if(this.dead) return;
                 let dx = 0, dy = 0;
 
-                if (touchMode && touchInput.move.active) { 
-                    dx = touchInput.move.x; dy = touchInput.move.y; 
-                } 
+                if (touchMode && touchInput.move.active) { dx = touchInput.move.x; dy = touchInput.move.y; } 
                 else {
                     if(keys.w) dy -= 1; if(keys.s) dy += 1;
                     if(keys.a) dx -= 1; if(keys.d) dx += 1;
@@ -442,15 +431,11 @@
                 this.x = MathUtils.clamp(this.x, -MAP_SIZE, MAP_SIZE);
                 this.y = MathUtils.clamp(this.y, -MAP_SIZE, MAP_SIZE);
 
-                let aimAngle = this.visualAngle; 
-                let isShooting = false;
+                let aimAngle = this.visualAngle; let isShooting = false;
                 
                 if (touchMode) {
-                    if (touchInput.aim.active) {
-                        isShooting = true; aimAngle = -touchInput.aim.angle;
-                    } else if (dx !== 0 || dy !== 0) {
-                        aimAngle = Math.atan2(dy, dx);
-                    }
+                    if (touchInput.aim.active) { isShooting = true; aimAngle = -touchInput.aim.angle; } 
+                    else if (dx !== 0 || dy !== 0) { aimAngle = Math.atan2(dy, dx); }
                 } else {
                     aimAngle = MathUtils.angle(this.x, this.y, mouse.x + camera.x, mouse.y + camera.y);
                     if (mouse.down) isShooting = true;
@@ -466,7 +451,6 @@
 
                 if(this.invincTimer > 0) this.invincTimer -= dt;
                 if(this.ultActiveTimer > 0) this.ultActiveTimer -= dt;
-
                 if(keys[" "] && this.ultCharge >= 100) this.triggerUlt();
 
                 for(let gid in entities.gems) {
@@ -487,14 +471,18 @@
             }
             shoot(angle) {
                 WebAudioSynth.shoot();
+                let color = this.ultActiveTimer > 0 ? '#ff0' : '#0ff';
+                
+                // Spawn locally
                 let spread = 0.15; let startAngle = angle - (spread * (this.multiShot-1)) / 2;
                 for(let i=0; i<this.multiShot; i++) {
                     let a = startAngle + (i * spread);
-                    let b = new Bullet(this.x, this.y, a, this.bulletSpeed, this.damage, this.pierce, this.ultActiveTimer > 0 ? '#ff0' : '#0ff');
-                    entities.bullets.push(b);
-                    sendNetwork({ type: 'SPAWN_BULLET', x: this.x, y: this.y, angle: a, speed: this.bulletSpeed, dmg: this.damage, pierce: this.pierce, color: b.color });
+                    entities.bullets.push(new Bullet(this.x, this.y, a, this.bulletSpeed, this.damage, this.pierce, color));
                 }
                 spawnParticles(this.x, this.y, 2, '#fff', 50, angle + Math.PI, 0.5);
+
+                // OPTIMIZED: Send a single shot event
+                sendNetwork({ type: 'SHOOT_EVENT', x: this.x, y: this.y, angle: angle, speed: this.bulletSpeed, dmg: this.damage, pierce: this.pierce, color: color, multiShot: this.multiShot });
             }
             triggerUlt() {
                 this.ultCharge = 0; this.invincTimer = 5; this.ultActiveTimer = 5;
@@ -547,7 +535,6 @@
             draw(ctx) { ctx.globalAlpha = Math.max(0, this.life*2); ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=this.color; ctx.fill(); ctx.globalAlpha=1; }
         }
 
-        // Host Only Logic
         function triggerEMP(x, y) {
             broadcast({ type: 'EMP_EFFECT', x, y });
             spawnParticles(x, y, 30, '#ff0', 300);
@@ -564,8 +551,7 @@
 
         function checkLevelUp() {
             if(sharedState.xp >= sharedState.xpNext) {
-                sharedState.xp -= sharedState.xpNext;
-                sharedState.level++;
+                sharedState.xp -= sharedState.xpNext; sharedState.level++;
                 sharedState.xpNext = Math.floor(sharedState.xpNext * 1.5);
                 sharedState.paused = true; readyUpgrades = 0;
                 broadcast({ type: 'LEVEL_UP', shared: sharedState });
@@ -593,17 +579,14 @@
                         let type = Math.random() > 0.8 ? 2 : 1;
                         entities.enemies[nextEntityId++] = {
                             x: target.x + Math.cos(angle)*800, y: target.y + Math.sin(angle)*800,
-                            hp: type === 1 ? 20 + sharedState.time/10 : 10 + sharedState.time/15,
-                            type: type, val: type === 1 ? 10 : 5
+                            hp: type === 1 ? 20 + sharedState.time/10 : 10 + sharedState.time/15, type: type, val: type === 1 ? 10 : 5
                         };
                     }
                 }
             }
 
             if(entities.boss) {
-                let b = entities.boss;
-                b.y += (0 - b.y) * 2 * dt; 
-                b.timer -= dt;
+                let b = entities.boss; b.y += (0 - b.y) * 2 * dt; b.timer -= dt;
                 if(b.timer <= 0) {
                     b.timer = 1.0;
                     for(let i=0; i<16; i++) {
@@ -628,14 +611,13 @@
             }
         }
 
-        // --- UPGRADES ---
         const UPGRADES =[
             { id: 1, name: "HEAVY CALIBER", desc: "+30% Damage", apply: () => localPlayer.damage *= 1.3 },
             { id: 2, name: "OVERCLOCK", desc: "+20% Fire Rate", apply: () => localPlayer.fireRate *= 0.8 },
             { id: 3, name: "SPLIT SHOT", desc: "Fires +1 Projectile", apply: () => localPlayer.multiShot += 1 },
             { id: 4, name: "RAILGUN TECH", desc: "Bullets pierce +1 enemy", apply: () => localPlayer.pierce += 1 },
             { id: 5, name: "THRUSTERS", desc: "+15% Speed", apply: () => localPlayer.speed *= 1.15 },
-            { id: 6, name: "VAMPIRISM", desc: "Heal 5 HP on level up", apply: () => localPlayer.hp = Math.min(localPlayer.maxHp, localPlayer.hp + 20) },
+            { id: 6, name: "VAMPIRISM", desc: "5% chance to heal 5 HP on hit", apply: () => localPlayer.vampChance += 0.05 },
             { id: 7, name: "NANOBOTS", desc: "+20 Max HP & Full Heal", apply: () => { localPlayer.maxHp += 20; localPlayer.hp = localPlayer.maxHp; } }
         ];
 
@@ -659,11 +641,7 @@
                     document.getElementById('waitingUpgradesText').classList.remove('hidden');
                     if(isHost) {
                         readyUpgrades++;
-                        if(readyUpgrades >= Object.keys(networkPlayers).length) {
-                            sharedState.paused = false; broadcast({ type: 'RESUME_GAME' });
-                            document.getElementById('upgradeScreen').classList.add('hidden');
-                            gameState = STATE.PLAYING; lastTime = performance.now();
-                        }
+                        checkReadyUpgrades(); // Use the robust resume function
                     } else {
                         sendNetwork({ type: 'UPGRADE_READY' });
                     }
@@ -672,9 +650,6 @@
             });
         }
 
-        /* =====================================================================
-           CORE LOOP & RENDERING
-           ===================================================================== */
         function startGame() {
             document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
@@ -702,8 +677,7 @@
 
         function findSpectateTarget() {
             let alive = Object.values(networkPlayers).filter(p => !p.dead && p.id !== myId);
-            if(alive.length > 0) spectateTargetId = alive[0].id;
-            else spectateTargetId = null;
+            if(alive.length > 0) spectateTargetId = alive[0].id; else spectateTargetId = null;
         }
 
         document.getElementById('btnCycleSpectate').addEventListener('click', () => {
@@ -754,7 +728,16 @@
         let screenShake = 0;
 
         function update(dt) {
-            if(sharedState.paused) return;
+            // LERP remote players smoothly
+            for(let id in networkPlayers) {
+                if(id !== myId) {
+                    let p = networkPlayers[id];
+                    if(p.targetX !== undefined) {
+                        p.x += (p.targetX - p.x) * 15 * dt;
+                        p.y += (p.targetY - p.y) * 15 * dt;
+                    }
+                }
+            }
 
             let targetX = localPlayer.x, targetY = localPlayer.y;
             if(localPlayer.dead && spectateTargetId && networkPlayers[spectateTargetId]) {
@@ -774,14 +757,19 @@
                         if(MathUtils.dist(b.x, b.y, e.x, e.y) < b.r + 10 && !b.hitList.includes(eid)) {
                             b.hitList.push(eid);
                             spawnParticles(e.x, e.y, 2, '#f05', 100);
+                            
+                            // Vampirism check on hit
+                            if (Math.random() < localPlayer.vampChance) {
+                                localPlayer.hp = Math.min(localPlayer.maxHp, localPlayer.hp + 5);
+                            }
+
                             if(isHost) { e.hp -= b.damage; if(e.hp<=0){ sharedState.xp += e.val; delete entities.enemies[eid]; entities.gems[nextEntityId++]={x:e.x,y:e.y,val:e.val}; WebAudioSynth.exp(); checkLevelUp();} }
                             else { sendNetwork({ type: 'HIT_ENEMY', eId: eid, dmg: b.damage }); }
                             if(b.hitList.length >= b.pierce) b.marked = true;
                         }
                     }
                     if(entities.boss && MathUtils.dist(b.x, b.y, entities.boss.x, entities.boss.y) < b.r + 40 && !b.hitList.includes('boss')) {
-                        b.hitList.push('boss');
-                        spawnParticles(entities.boss.x, entities.boss.y, 5, '#f05', 150);
+                        b.hitList.push('boss'); spawnParticles(entities.boss.x, entities.boss.y, 5, '#f05', 150);
                         if(isHost) { entities.boss.hp -= b.damage; if(entities.boss.hp<=0){ broadcast({type:'WIN_GAME'}); triggerWin(); } }
                         else { sendNetwork({ type: 'HIT_BOSS', dmg: b.damage }); }
                         if(b.hitList.length >= b.pierce) b.marked = true;
@@ -886,10 +874,17 @@
             for(let id in networkPlayers) { if(!networkPlayers[id].dead) { mctx.fillStyle= id===myId?'#0ff':'#0f0'; mctx.beginPath(); mctx.arc(mX(networkPlayers[id].x), mY(networkPlayers[id].y), 3, 0, Math.PI*2); mctx.fill(); } }
         }
 
+        // FIXED: Loop no longer aborts itself when paused!
         function gameLoop(time) {
-            if(gameState !== STATE.PLAYING) return;
-            dt = Math.min((time - lastTime) / 1000, 0.1); lastTime = time;
-            update(dt); render(); requestAnimationFrame(gameLoop);
+            requestAnimationFrame(gameLoop);
+            if(gameState !== STATE.PLAYING) {
+                lastTime = time; // Keeps DT smooth while paused
+                return;
+            }
+            dt = Math.min((time - lastTime) / 1000, 0.1); 
+            lastTime = time;
+            update(dt); 
+            render(); 
         }
 
         /* =====================================================================
