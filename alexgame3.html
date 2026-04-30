@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>v7 CHRONO-CORE | CO-OP SURVIVAL</title>
+    <title>V8 CHRONO-CORE | CO-OP SURVIVAL</title>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
@@ -209,7 +209,7 @@
 
         const MAP_SIZE = 2500;
         let localPlayer;
-        let entities = { enemies: {}, bullets: [], particles:[], gems: {}, boss: null };
+        let entities = { enemies: {}, bullets:[], particles:[], gems: {}, boss: null };
         let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false, bossDefeated: false };
         let readyPlayers = new Set();
         let nextEntityId = 1;
@@ -232,7 +232,7 @@
         }
 
         /* =====================================================================
-           NETWORKING (PEERJS) WITH FIREWALL/NAT PUNCTURE (STUN SERVERS)
+           NETWORKING (PEERJS) - OPTIMIZED FOR SCHOOL WIFI
            ===================================================================== */
         function generateRoomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -254,23 +254,23 @@
         function initPeer(role, code) {
             myName = document.getElementById('playerName').value.trim() || 'OPERATIVE';
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
-            myId = 'CHRONO-' + roomCode + '-' + Math.floor(Math.random()*10000);
+            
+            // FIXED: Host only ever creates ONE Peer ID. Prevents getting flagged as spam by school routers.
+            myId = role === 'host' ? `CHRONO-${roomCode}-HOST` : `CHRONO-${roomCode}-${Math.floor(Math.random()*10000)}`;
 
-            // STUN Servers to punch through School IT Firewalls & Symmetric NAT
-            const peerConfig = {
+            // FIXED: Added enterprise STUN servers to punch through strict school NATs
+            const peerOptions = {
                 debug: 1,
                 config: {
-                    'iceServers':[
+                    iceServers:[
                         { urls: 'stun:stun.l.google.com:19302' },
                         { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' }
+                        { urls: 'stun:global.stun.twilio.com:3478' }
                     ]
                 }
             };
 
-            peer = new Peer(myId, peerConfig);
+            peer = new Peer(myId, peerOptions);
 
             peer.on('open', id => {
                 document.getElementById('mainMenu').classList.add('hidden');
@@ -282,18 +282,24 @@
                 if (role === 'host') {
                     isHost = true;
                     document.getElementById('btnStartGame').classList.remove('hidden');
+                    // Host listens directly on their main instance.
+                    peer.on('connection', conn => setupConnection(conn));
                 } else {
                     document.getElementById('waitHostText').classList.remove('hidden');
-                    hostConn = peer.connect('CHRONO-' + roomCode + '-HOST');
+                    hostConn = peer.connect(`CHRONO-${roomCode}-HOST`, { reliable: true });
                     setupConnection(hostConn);
                 }
             });
 
-            // Ensure the Host's dedicated listener ALSO uses the STUN servers
-            if (role === 'host') {
-                const hostPeer = new Peer('CHRONO-' + roomCode + '-HOST', peerConfig);
-                hostPeer.on('connection', conn => setupConnection(conn));
-            }
+            // Alerts if school Wi-Fi blocks the connection entirely
+            peer.on('error', err => {
+                console.error("PeerJS Error:", err);
+                if (err.type === 'peer-unavailable') {
+                    alert("Could not find the host. Make sure the room code is correct and the host is still in the lobby.");
+                } else if (err.type === 'network') {
+                    alert("Network connection lost. Your school firewall might be blocking the game.");
+                }
+            });
         }
 
         function setupConnection(conn) {
@@ -348,7 +354,6 @@
                     }
 
                     if (!sharedState.paused && gameState === STATE.UPGRADE) resumeGameClient();
-                    
                     updateHUD();
                 }
                 else if (data.type === 'PLAYER_UPDATE' && isHost) {
@@ -711,6 +716,9 @@
             });
         }
 
+        /* =====================================================================
+           CORE LOOP & RENDERING
+           ===================================================================== */
         function startGame() {
             document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
