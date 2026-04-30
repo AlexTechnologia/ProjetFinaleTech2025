@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>v11 CHRONO-CORE | ENDLESS CO-OP</title>
+    <title>v12 CHRONO-CORE | ENDLESS CO-OP</title>
     
-    <!-- NETWORK LAYER REPLACED: Bypasses School Firewalls using Secure WebSockets (Port 443) -->
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <!-- GUARANTEED TO BYPASS SCHOOL FIREWALLS: Using Cloudflare CDN instead of unpkg -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.2/mqtt.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
 
     <style>
@@ -104,6 +104,9 @@
         <div class="panel">
             <h1>CHRONO-CORE</h1>
             <input type="text" id="playerName" placeholder="Enter Call Sign" maxlength="12">
+            
+            <div id="statusText" style="color: #ff0; font-size: 0.9rem; margin-bottom: 15px; text-align: center; height: 1.2rem;"></div>
+
             <button id="btnHost">HOST GAME</button>
             <div class="flex-row">
                 <input type="text" id="joinCode" placeholder="ROOM CODE" maxlength="4">
@@ -123,7 +126,7 @@
                 <button id="btnSendChat" style="width: 80px;">SEND</button>
             </div>
             <button id="btnStartGame" class="hidden">INITIALIZE DEPLOYMENT</button>
-            <p id="waitHostText" style="text-align:center; color:#aaa;" class="hidden">Connecting to Secure Relay...</p>
+            <p id="waitHostText" style="text-align:center; color:#aaa;" class="hidden">Waiting for host to start...</p>
         </div>
     </div>
 
@@ -134,7 +137,7 @@
                 <strong>PC:</strong> WASD to move. Mouse to aim. Left Click to fire.<br>
                 <strong>Ultimate:</strong> SPACEBAR (When yellow bar is full)<br>
                 <strong>Mobile:</strong> Twin virtual sticks. Left moves, right aims/fires.<br><br>
-                <strong>Objective:</strong> Survive the endless horde. The Dreadnaught arrives every 2 minutes.<br><br>
+                <strong>Objective:</strong> Survive the endless horde. Share XP to level up. The Dreadnaught arrives every 2 minutes.<br><br>
                 <em>Spectating:</em> Click mouse to cycle teammates when dead.
             </p>
             <button onclick="document.getElementById('controlsScreen').classList.add('hidden')">CLOSE</button>
@@ -233,8 +236,15 @@
         }
 
         /* =====================================================================
-           NETWORKING (MQTT OVER SECURE WEBSOCKETS) -> BYPASSES ALL FIREWALLS
+           NETWORKING (MULTI-RELAY MQTT) - BYPASSES MONAVENIR/FORTIGUARD
            ===================================================================== */
+        const RELAYS =[
+            'wss://broker.emqx.io:8084/mqtt',
+            'wss://test.mosquitto.org:8081/mqtt',
+            'wss://broker.hivemq.com:8884/mqtt'
+        ];
+        let relayIndex = 0;
+
         function generateRoomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
             let res = ''; for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
@@ -246,47 +256,81 @@
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
             myId = `CHRONO-${Math.floor(Math.random()*100000)}`;
 
+            document.getElementById('btnHost').disabled = true;
+            document.getElementById('btnJoin').disabled = true;
+
+            attemptConnection(role);
+        }
+
+        function attemptConnection(role) {
+            if (relayIndex >= RELAYS.length) {
+                alert("CRITICAL ERROR: Your school network has blocked every single external relay port. Try connecting via a mobile hotspot.");
+                location.reload();
+                return;
+            }
+
+            const status = document.getElementById('statusText');
+            status.innerText = `Bypassing Firewall (Relay ${relayIndex + 1}/${RELAYS.length})...`;
+
+            try {
+                mqttClient = mqtt.connect(RELAYS[relayIndex], { connectTimeout: 4000 });
+
+                mqttClient.on('connect', () => {
+                    status.innerText = "Secure Connection Established.";
+                    setupLobby(role);
+                });
+
+                mqttClient.on('error', (err) => {
+                    mqttClient.end();
+                    relayIndex++;
+                    attemptConnection(role);
+                });
+                
+                mqttClient.on('offline', () => {
+                    if (gameState === STATE.MENU) {
+                        mqttClient.end();
+                        relayIndex++;
+                        attemptConnection(role);
+                    }
+                });
+
+                mqttClient.on('message', (topic, message) => {
+                    try {
+                        let data = JSON.parse(message.toString());
+                        if (data.senderId === myId && data.type !== 'HELLO') return;
+
+                        handleNetworkData(data);
+
+                        if (isHost &&['CHAT', 'SHOOT_EVENT', 'HIT_ENEMY', 'HIT_BOSS', 'UPGRADE_READY', 'USE_ULT', 'HELLO'].includes(data.type)) {
+                            sendNetwork(data);
+                        }
+                    } catch(e) {}
+                });
+
+            } catch (err) {
+                relayIndex++;
+                attemptConnection(role);
+            }
+        }
+
+        function setupLobby(role) {
             document.getElementById('mainMenu').classList.add('hidden');
             document.getElementById('lobbyScreen').classList.remove('hidden');
             document.getElementById('displayRoomCode').innerText = roomCode;
 
-            // Connects via Port 443 HTTPS websockets. Firewalls treat this as a standard secure website.
-            mqttClient = mqtt.connect('wss://mqtt.eclipseprojects.io:443/mqtt');
-
-            mqttClient.on('connect', () => {
-                if (role === 'host') {
-                    isHost = true;
-                    networkPlayers[myId] = { name: myName, id: myId, isHost: true, dead: false };
-                    document.getElementById('btnStartGame').classList.remove('hidden');
-                    updateLobbyUI();
-                    
-                    mqttClient.subscribe(`chrono-v1/${roomCode}/client/+`);
-                } else {
-                    document.getElementById('waitHostText').classList.remove('hidden');
-                    document.getElementById('waitHostText').innerText = "Connected! Waiting for host to start...";
-                    
-                    mqttClient.subscribe(`chrono-v1/${roomCode}/host`);
-                    mqttClient.subscribe(`chrono-v1/${roomCode}/client/${myId}`);
-                    
-                    sendNetwork({ type: 'HELLO', id: myId, name: myName });
-                }
-            });
-
-            mqttClient.on('message', (topic, message) => {
-                try {
-                    let data = JSON.parse(message.toString());
-                    
-                    // Prevent circular loopbacks
-                    if (data.senderId === myId && data.type !== 'HELLO') return;
-
-                    handleNetworkData(data);
-
-                    // Host acts as relay for client events
-                    if (isHost &&['CHAT', 'SHOOT_EVENT', 'HIT_ENEMY', 'HIT_BOSS', 'UPGRADE_READY', 'USE_ULT', 'HELLO'].includes(data.type)) {
-                        sendNetwork(data);
-                    }
-                } catch(e) {}
-            });
+            if (role === 'host') {
+                isHost = true;
+                networkPlayers[myId] = { name: myName, id: myId, isHost: true, dead: false };
+                document.getElementById('btnStartGame').classList.remove('hidden');
+                updateLobbyUI();
+                mqttClient.subscribe(`chrono-v1/${roomCode}/client/+`);
+            } else {
+                document.getElementById('waitHostText').classList.remove('hidden');
+                document.getElementById('waitHostText').innerText = "Connected to Secure Relay! Waiting for Host...";
+                mqttClient.subscribe(`chrono-v1/${roomCode}/host`);
+                mqttClient.subscribe(`chrono-v1/${roomCode}/client/${myId}`);
+                sendNetwork({ type: 'HELLO', id: myId, name: myName });
+            }
         }
 
         function sendNetwork(data) {
@@ -803,7 +847,7 @@
             let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
             document.getElementById('timeText').innerText = `${m}:${s}`;
 
-            if(entities.boss) {
+            if(entities.boss && !sharedState.bossDefeated) {
                 document.getElementById('bossWarning').classList.remove('hidden');
                 document.getElementById('bossWarning').innerHTML = `ANOMALY DETECTED<br>DREADNAUGHT MK-${sharedState.bossLevel}`;
                 document.getElementById('bossHpContainer').classList.remove('hidden');
@@ -1006,13 +1050,13 @@
 
         function gameLoop(time) {
             requestAnimationFrame(gameLoop);
-            if(gameState !== STATE.PLAYING) {
+            if(gameState !== STATE.PLAYING && gameState !== STATE.WON) {
                 lastTime = time; 
                 return;
             }
             dt = Math.min((time - lastTime) / 1000, 0.1); 
             lastTime = time;
-            update(dt); 
+            if (gameState === STATE.PLAYING) update(dt); 
             render(); 
         }
 
