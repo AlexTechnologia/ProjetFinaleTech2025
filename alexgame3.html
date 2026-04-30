@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>V8 CHRONO-CORE | CO-OP SURVIVAL</title>
+    <title>V9 CHRONO-CORE | ENDLESS CO-OP</title>
     
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.2/nipplejs.min.js"></script>
@@ -133,7 +133,7 @@
                 <strong>PC:</strong> WASD to move. Mouse to aim. Left Click to fire.<br>
                 <strong>Ultimate:</strong> SPACEBAR (When yellow bar is full)<br>
                 <strong>Mobile:</strong> Twin virtual sticks. Left moves, right aims/fires.<br><br>
-                <strong>Objective:</strong> Survive the horde. Share XP to level up. At 5:00, the Dreadnaught arrives.<br><br>
+                <strong>Objective:</strong> Survive the endless horde. Share XP to level up. The Dreadnaught arrives every 5 minutes.<br><br>
                 <em>Spectating:</em> Click mouse to cycle teammates when dead.
             </p>
             <button onclick="document.getElementById('controlsScreen').classList.add('hidden')">CLOSE</button>
@@ -150,17 +150,6 @@
     <div id="spectateUI" class="hidden">
         <h2 style="color: #f05;">CRITICAL DAMAGE - SPECTATING</h2>
         <button id="btnCycleSpectate" style="width: 250px; background: rgba(0,0,0,0.8);">CYCLE TARGET (CLICK)</button>
-    </div>
-
-    <div id="victoryScreen" class="ui-layer interactive hidden">
-        <div class="panel" style="border-color: #0f0; box-shadow: 0 0 50px rgba(0,255,0,0.3);">
-            <h1 style="color: #0f0; text-shadow: 0 0 20px #0f0;">ANOMALY NEUTRALIZED</h1>
-            <p style="font-size: 1.2rem; color: #fff; text-align: center; margin-bottom: 20px;">The Dreadnaught has been destroyed.</p>
-            <div style="text-align: center; margin-bottom: 30px;">
-                <span style="font-size: 1.5rem; color: #0ff;">FINAL TIME: <span id="victoryTime"></span></span>
-            </div>
-            <button onclick="location.reload()" style="border-color: #0f0; color: #0f0;">RETURN TO BASE</button>
-        </div>
     </div>
 
     <script>
@@ -198,7 +187,7 @@
         const mctx = miniCanvas.getContext('2d');
         let cw, ch;
 
-        const STATE = { MENU: 0, LOBBY: 1, PLAYING: 2, UPGRADE: 3, GAMEOVER: 4, WON: 5 };
+        const STATE = { MENU: 0, LOBBY: 1, PLAYING: 2, UPGRADE: 3, GAMEOVER: 4 };
         let gameState = STATE.MENU;
         
         let peer, myId, myName, isHost = false;
@@ -206,11 +195,12 @@
         let hostConn = null;  
         let networkPlayers = {}; 
         let roomCode = "";
+        let pendingConnectionTimeout = null;
 
         const MAP_SIZE = 2500;
         let localPlayer;
-        let entities = { enemies: {}, bullets:[], particles:[], gems: {}, boss: null };
-        let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false, bossDefeated: false };
+        let entities = { enemies: {}, bullets:[], particles:[], texts:[], gems: {}, boss: null };
+        let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false, bossLevel: 1 };
         let readyPlayers = new Set();
         let nextEntityId = 1;
 
@@ -232,7 +222,7 @@
         }
 
         /* =====================================================================
-           NETWORKING (PEERJS) - OPTIMIZED FOR SCHOOL WIFI
+           NETWORKING (PEERJS)
            ===================================================================== */
         function generateRoomCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -255,17 +245,17 @@
             myName = document.getElementById('playerName').value.trim() || 'OPERATIVE';
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
             
-            // FIXED: Host only ever creates ONE Peer ID. Prevents getting flagged as spam by school routers.
             myId = role === 'host' ? `CHRONO-${roomCode}-HOST` : `CHRONO-${roomCode}-${Math.floor(Math.random()*10000)}`;
 
-            // FIXED: Added enterprise STUN servers to punch through strict school NATs
             const peerOptions = {
                 debug: 1,
                 config: {
                     iceServers:[
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:global.stun.twilio.com:3478' }
+                        { urls: 'stun:global.stun.twilio.com:3478' },
+                        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
                     ]
                 }
             };
@@ -282,28 +272,34 @@
                 if (role === 'host') {
                     isHost = true;
                     document.getElementById('btnStartGame').classList.remove('hidden');
-                    // Host listens directly on their main instance.
                     peer.on('connection', conn => setupConnection(conn));
                 } else {
                     document.getElementById('waitHostText').classList.remove('hidden');
                     hostConn = peer.connect(`CHRONO-${roomCode}-HOST`, { reliable: true });
+                    
+                    pendingConnectionTimeout = setTimeout(() => {
+                        alert("ERROR: The school network firewall is blocking the connection to the host.");
+                        location.reload();
+                    }, 8000);
+
                     setupConnection(hostConn);
                 }
             });
 
-            // Alerts if school Wi-Fi blocks the connection entirely
             peer.on('error', err => {
                 console.error("PeerJS Error:", err);
                 if (err.type === 'peer-unavailable') {
-                    alert("Could not find the host. Make sure the room code is correct and the host is still in the lobby.");
-                } else if (err.type === 'network') {
-                    alert("Network connection lost. Your school firewall might be blocking the game.");
+                    alert("Could not find the host. Make sure the room code is correct.");
+                    location.reload();
+                } else if (err.type === 'network' || err.type === 'webrtc') {
+                    alert("Network connection lost. The school firewall might be actively blocking WebRTC.");
                 }
             });
         }
 
         function setupConnection(conn) {
             conn.on('open', () => {
+                clearTimeout(pendingConnectionTimeout); 
                 connections[conn.peer] = conn;
                 conn.send({ type: 'HELLO', id: myId, name: myName });
             });
@@ -386,7 +382,16 @@
                     }
                 }
                 else if (data.type === 'HIT_BOSS' && isHost) {
-                    if(entities.boss) { entities.boss.hp -= data.dmg; if(entities.boss.hp <= 0) { sharedState.bossDefeated = true; broadcast({ type: 'WIN_GAME' }); triggerWin(); } }
+                    if(entities.boss) { 
+                        entities.boss.hp -= data.dmg; 
+                        if(entities.boss.hp <= 0) { 
+                            sharedState.bossLevel++;
+                            sharedState.xp += 5000;
+                            entities.boss = null;
+                            broadcast({ type: 'SFX', name: 'exp' });
+                            checkLevelUp();
+                        } 
+                    }
                 }
                 else if (data.type === 'ADD_ULT') {
                     if (data.targetId === myId) localPlayer.ultCharge = Math.min(100, localPlayer.ultCharge + data.val);
@@ -410,7 +415,6 @@
                 else if (data.type === 'RESUME_GAME') {
                     resumeGameClient();
                 }
-                else if (data.type === 'WIN_GAME') { triggerWin(); }
             });
             
             conn.on('close', () => {
@@ -546,6 +550,7 @@
             takeDamage(amt) {
                 if(this.dead || this.invincTimer > 0) return;
                 this.hp -= amt; WebAudioSynth.hit(); screenShake = 10;
+                entities.texts.push(new FloatingText(this.x, this.y, Math.floor(amt), '#f05'));
                 if(this.hp <= 0) {
                     this.dead = true; this.hp = 0;
                     document.getElementById('spectateUI').classList.remove('hidden');
@@ -573,6 +578,20 @@
             }
             update(dt) { this.x += this.vx*dt; this.y += this.vy*dt; this.vx *= 0.9; this.vy *= 0.9; this.life -= dt; if(this.life<=0) this.marked = true; }
             draw(ctx) { ctx.globalAlpha = Math.max(0, this.life*2); ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,Math.PI*2); ctx.fillStyle=this.color; ctx.fill(); ctx.globalAlpha=1; }
+        }
+
+        class FloatingText {
+            constructor(x, y, text, color) {
+                this.x = x + MathUtils.rand(-15, 15); this.y = y; this.text = text; this.color = color;
+                this.life = 0.5; this.vy = -50; this.marked = false;
+            }
+            update(dt) { this.y += this.vy * dt; this.life -= dt; if(this.life <= 0) this.marked = true; }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life * 2);
+                ctx.fillStyle = this.color; ctx.font = 'bold 16px Orbitron'; ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.globalAlpha = 1;
+            }
         }
 
         function triggerEMP(x, y) {
@@ -629,34 +648,54 @@
                 }
             }
 
-            if(sharedState.time >= 300 && !entities.boss && !sharedState.bossDefeated) {
+            // Endless Boss Spawning - Every 5 minutes (300s)
+            if(sharedState.time >= sharedState.bossLevel * 300 && !entities.boss) {
                 entities.enemies = {}; 
-                entities.boss = { x: 0, y: -1000, hp: 5000 * Object.keys(networkPlayers).length, maxHp: 5000 * Object.keys(networkPlayers).length, phase: 0, timer: 0 };
+                let hp = 5000 * Object.keys(networkPlayers).length * sharedState.bossLevel;
+                // Spawn boss near a random alive player, but far enough away
+                let target = Object.values(networkPlayers).find(p => !p.dead) || localPlayer;
+                entities.boss = { x: target.x, y: target.y - 1200, hp: hp, maxHp: hp, phase: 0, timer: 0 };
                 broadcast({ type: 'SFX', name: 'ult' });
             }
 
-            if(!entities.boss && !sharedState.bossDefeated) {
-                let spawnRate = Math.max(0.2, 1.5 - (sharedState.time * 0.003));
-                if(Math.random() < (dt / spawnRate)) {
-                    let targetId = Object.keys(networkPlayers)[Math.floor(Math.random() * Object.keys(networkPlayers).length)];
-                    let target = targetId === myId ? localPlayer : networkPlayers[targetId];
+            // Per-Player Dynamic Spawning
+            if(!entities.boss) {
+                let baseRate = Math.max(0.15, 1.5 - (sharedState.time * 0.0015)); 
+                [localPlayer, ...Object.values(networkPlayers)].forEach(target => {
                     if(target && !target.dead) {
-                        let angle = Math.random() * Math.PI * 2;
-                        let type = Math.random() > 0.8 ? 2 : 1;
-                        entities.enemies[nextEntityId++] = {
-                            x: target.x + Math.cos(angle)*800, y: target.y + Math.sin(angle)*800,
-                            hp: type === 1 ? 20 + sharedState.time/10 : 10 + sharedState.time/15, type: type, val: type === 1 ? 10 : 5
-                        };
+                        if(Math.random() < (dt / baseRate)) {
+                            let angle = Math.random() * Math.PI * 2;
+                            let type = Math.random() > 0.8 ? 2 : 1;
+                            entities.enemies[nextEntityId++] = {
+                                x: target.x + Math.cos(angle)*900, y: target.y + Math.sin(angle)*900,
+                                hp: type === 1 ? 20 + sharedState.time/10 : 10 + sharedState.time/15, type: type, val: type === 1 ? 10 : 5
+                            };
+                        }
                     }
-                }
+                });
             }
 
+            // Dynamic Endless Boss Movement & Attacks
             if(entities.boss) {
-                let b = entities.boss; b.y += (0 - b.y) * 2 * dt; b.timer -= dt;
+                let b = entities.boss; 
+                
+                // Track Closest Player
+                let closest = null, minDist = Infinity;[localPlayer, ...Object.values(networkPlayers)].forEach(p => {
+                    if(!p.dead) { let d = MathUtils.dist(b.x, b.y, p.x, p.y); if(d < minDist){ minDist=d; closest=p; } }
+                });
+                if(closest) {
+                    let a = MathUtils.angle(b.x, b.y, closest.x, closest.y);
+                    let bSpeed = 40 + (sharedState.bossLevel * 10);
+                    b.x += Math.cos(a) * bSpeed * dt;
+                    b.y += Math.sin(a) * bSpeed * dt;
+                }
+
+                b.timer -= dt;
                 if(b.timer <= 0) {
-                    b.timer = 1.0;
-                    for(let i=0; i<16; i++) {
-                        let a = (Math.PI*2/16) * i + (b.phase * 0.1);
+                    b.timer = Math.max(0.4, 1.2 - (sharedState.bossLevel * 0.1));
+                    let bCount = 12 + (sharedState.bossLevel * 4);
+                    for(let i=0; i<bCount; i++) {
+                        let a = (Math.PI*2/bCount) * i + (b.phase * 0.1);
                         broadcast({ type: 'SPAWN_BULLET', x: b.x, y: b.y, angle: a, speed: 300, dmg: 20, pierce: 1, color: '#f05' });
                         entities.bullets.push(new Bullet(b.x, b.y, a, 300, 20, 1, '#f05'));
                     }
@@ -738,17 +777,6 @@
             if(isHost) broadcast({ type: 'START_GAME' });
         }
 
-        function triggerWin() {
-            gameState = STATE.WON;
-            document.getElementById('hud').classList.add('hidden');
-            document.getElementById('teammates-ui').classList.add('hidden');
-            document.getElementById('spectateUI').classList.add('hidden');
-            document.getElementById('victoryScreen').classList.remove('hidden');
-            let m = Math.floor(sharedState.time/60).toString().padStart(2, '0');
-            let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
-            document.getElementById('victoryTime').innerText = `${m}:${s}`;
-        }
-
         function findSpectateTarget() {
             let alive = Object.values(networkPlayers).filter(p => !p.dead && p.id !== myId);
             if(alive.length > 0) spectateTargetId = alive[0].id; else spectateTargetId = null;
@@ -774,8 +802,9 @@
             let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
             document.getElementById('timeText').innerText = `${m}:${s}`;
 
-            if(entities.boss && !sharedState.bossDefeated) {
+            if(entities.boss) {
                 document.getElementById('bossWarning').classList.remove('hidden');
+                document.getElementById('bossWarning').innerHTML = `ANOMALY DETECTED<br>DREADNAUGHT MK-${sharedState.bossLevel}`;
                 document.getElementById('bossHpContainer').classList.remove('hidden');
                 document.getElementById('bossHpBar').style.width = `${(entities.boss.hp / entities.boss.maxHp)*100}%`;
             } else {
@@ -842,6 +871,7 @@
                         if(MathUtils.dist(b.x, b.y, e.x, e.y) < b.r + 10 && !b.hitList.includes(eid)) {
                             b.hitList.push(eid);
                             spawnParticles(e.x, e.y, 2, '#f05', 100);
+                            entities.texts.push(new FloatingText(e.x, e.y, Math.floor(b.damage), '#fff'));
                             
                             if (Math.random() < localPlayer.vampChance) {
                                 localPlayer.hp = Math.min(localPlayer.maxHp, localPlayer.hp + 5);
@@ -854,7 +884,18 @@
                     }
                     if(entities.boss && MathUtils.dist(b.x, b.y, entities.boss.x, entities.boss.y) < b.r + 40 && !b.hitList.includes('boss')) {
                         b.hitList.push('boss'); spawnParticles(entities.boss.x, entities.boss.y, 5, '#f05', 150);
-                        if(isHost) { entities.boss.hp -= b.damage; if(entities.boss.hp<=0){ sharedState.bossDefeated = true; broadcast({type:'WIN_GAME'}); triggerWin(); } }
+                        entities.texts.push(new FloatingText(entities.boss.x, entities.boss.y, Math.floor(b.damage), '#ff0'));
+                        
+                        if(isHost) { 
+                            entities.boss.hp -= b.damage; 
+                            if(entities.boss.hp<=0){ 
+                                sharedState.bossLevel++;
+                                sharedState.xp += 5000;
+                                entities.boss = null;
+                                broadcast({ type: 'SFX', name: 'exp' });
+                                checkLevelUp();
+                            } 
+                        }
                         else { sendNetwork({ type: 'HIT_BOSS', dmg: b.damage }); }
                         if(b.hitList.length >= b.pierce) b.marked = true;
                     }
@@ -867,8 +908,10 @@
             });
             
             entities.particles.forEach(p => p.update(dt));
+            entities.texts.forEach(t => t.update(dt));
             entities.bullets = entities.bullets.filter(b => !b.marked);
             entities.particles = entities.particles.filter(p => !p.marked);
+            entities.texts = entities.texts.filter(t => !t.marked);
 
             for(let eid in entities.enemies) {
                 let e = entities.enemies[eid];
@@ -935,6 +978,7 @@
             
             entities.bullets.forEach(b => b.draw(ctx));
             entities.particles.forEach(p => p.draw(ctx));
+            entities.texts.forEach(t => t.draw(ctx));
 
             for(let id in networkPlayers) {
                 if(id !== myId && !networkPlayers[id].dead) {
