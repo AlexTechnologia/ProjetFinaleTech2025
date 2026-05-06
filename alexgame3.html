@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CHRONO-CORE | CO-OP SURVIVAL</title>
+    <title>v28 CHRONO-CORE | CO-OP SURVIVAL</title>
     
-    <!-- Firebase SDK (v8 compat for easy single-file use) -->
+    <!-- Firebase SDK (v8 compat for single-file architecture) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -154,32 +154,47 @@
         <button id="btnCycleSpectate" style="width: 250px; background: rgba(0,0,0,0.8);">CYCLE TARGET (CLICK)</button>
     </div>
 
+    <!-- Cinematic Victory Screen -->
+    <div id="victoryScreen" class="ui-layer interactive hidden">
+        <div class="panel" style="border-color: #0f0; box-shadow: 0 0 50px rgba(0,255,0,0.3);">
+            <h1 style="color: #0f0; text-shadow: 0 0 20px #0f0;">ANOMALY NEUTRALIZED</h1>
+            <p style="font-size: 1.2rem; color: #fff; text-align: center; margin-bottom: 20px;">The Dreadnaught has been destroyed.</p>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <span style="font-size: 1.5rem; color: #0ff;">SURVIVAL TIME: <span id="victoryTime"></span></span>
+            </div>
+            <button onclick="location.reload()" style="border-color: #0f0; color: #0f0;">RETURN TO BASE</button>
+        </div>
+    </div>
+
     <script>
         // =====================================================================
-        // 1. FIREBASE AUTHENTICATION & INITIALIZATION
+        // 1. FIREBASE AUTHENTICATION & INITIALIZATION 
         // =====================================================================
+        
+        // Permanent Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyCqyCcs2R2e7AegGjvFAwG98wlamtbHvZY",
-            authDomain: "bard-frontend.firebaseapp.com",
-            projectId: "bard-frontend",
-            storageBucket: "bard-frontend.firebasestorage.app",
-            messagingSenderId: "175205271074",
-            appId: "1:175205271074:web:2b7bd4d34d33bf38e6ec7b",
-            databaseURL: "https://bard-frontend-default-rtdb.firebaseio.com" // Explicitly added for RTDB support
+            apiKey: "AIzaSyDUoYS6MwDIVe8coZOM9A0ZCYaZTeDSloo",
+            authDomain: "babjeu-85d3e.firebaseapp.com",
+            databaseURL: "https://babjeu-85d3e-default-rtdb.firebaseio.com",
+            projectId: "babjeu-85d3e",
+            storageBucket: "babjeu-85d3e.firebasestorage.app",
+            messagingSenderId: "306959176803",
+            appId: "1:306959176803:web:2be00da38dbb37e777d456",
+            measurementId: "G-T38G7Y7MJ7"
         };
-
-        const authToken = "eyJhbGciOiJSUzI1NiIsImtpZCI6Ijg4OWY4ODcxMTZjMzU5OGVmZDZlZWU4ODA4YjhhZWYwMTIwYmFjOWYiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0BiYXJkLWZyb250ZW5kLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwiYXVkIjoiaHR0cHM6Ly9pZGVudGl0eXRvb2xraXQuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmlkZW50aXR5LmlkZW50aXR5dG9vbGtpdC52MS5JZGVudGl0eVRvb2xraXQiLCJ1aWQiOiIxNTA4NTc1MDY3MjIxNTM3NDA3NiIsImlzcyI6ImZpcmViYXNlLWFkbWluc2RrLWZic3ZjQGJhcmQtZnJvbnRlbmQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJjbGFpbXMiOnsiYXBwSWQiOiJjXzJlNDRkYzFhMjU5ZGRjYmZfaW5kZXguaHRtbC01MTYifSwiZXhwIjoxNzc4MDA0Mjk1LCJpYXQiOjE3NzgwMDA2OTUsImFsZyI6IlJTMjU2In0.Y2r-BudcfjT1-2kLsKWbwDsH-S-nIdP_aFGUyhVaeFuOqTE1SlaONaNNLwqawMXVwKehcvUHukarCh4pw7ln6lKcga1FDaOaemTf5V3Rhcn5p1L7nB6dsrF7ADvTFRLoVwD9Oy1wbM3oESh8t4eXvimtpMkqHfbA5VS20V1UJmyBy8a9h5TzQlhFILfy_SenCGYjkbMbv9vroroDVgyZg9cUQvy23mEq9lhawata69qPJuqTg6zMhEDpUM5vOh3G0IuiU6FilFd14nQjwWDF7_kIuDJKiovSxih0qPsh8S8_9vpiRjVWhLUu6zmJTLDJaWi9by0uKql31viXOh5seg";
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const auth = firebase.auth();
 
         let dbAuthed = false;
-        auth.signInWithCustomToken(authToken).then(() => {
+        
+        // Permanent Anonymous Auth. Requires NO tokens, and NEVER expires.
+        auth.signInAnonymously().then(() => {
             dbAuthed = true;
-            console.log("Firebase Auth Success - Bypassing School Firewalls");
+            console.log("Firebase Auth Success - Firewall bypassed successfully.");
         }).catch(err => {
-            alert("FIREBASE AUTH ERROR: Your session token expired. Please ask Gemini Canvas for a new authToken and replace it in the code.\n\nError: " + err.message);
+            alert("FIREBASE AUTH ERROR: Ensure you enabled 'Anonymous' in Firebase Authentication.\n\nError: " + err.message);
         });
 
         // =====================================================================
@@ -220,7 +235,7 @@
         const MAP_SIZE = 2500;
         let localPlayer;
         let entities = { enemies: {}, bullets:[], particles:[], gems: {}, texts:[], boss: null };
-        let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false, bossesDefeated: 0, nextBossTime: 180 }; // Bosses every 3 minutes
+        let sharedState = { xp: 0, level: 1, xpNext: 100, time: 0, paused: false, bossesDefeated: 0, nextBossTime: 180 };
         let nextEntityId = 1;
 
         const keys = { w:false, a:false, s:false, d:false, " ":false };
@@ -247,7 +262,7 @@
         }
 
         function initFirebase(role, code) {
-            if(!dbAuthed) { alert("Still authenticating... please wait a second."); return; }
+            if(!dbAuthed) { alert("Still connecting to Relay Servers... please wait a second."); return; }
             myName = document.getElementById('playerName').value.trim() || 'OPERATIVE';
             roomCode = role === 'host' ? generateRoomCode() : code.toUpperCase();
             myId = `PLAYER-${Math.floor(Math.random()*100000)}`;
@@ -257,7 +272,7 @@
             document.getElementById('lobbyScreen').classList.remove('hidden');
             document.getElementById('displayRoomCode').innerText = roomCode;
             
-            // Clean up host room on start
+            // Host initializes the Room DB
             if(isHost) {
                 db.ref(`rooms/${roomCode}`).remove();
                 db.ref(`rooms/${roomCode}`).onDisconnect().remove(); 
@@ -266,21 +281,20 @@
                 document.getElementById('waitHostText').classList.remove('hidden');
             }
 
-            // Write self to lobby
+            // Join Lobby
             networkPlayers[myId] = { name: myName, id: myId, isHost: isHost };
             db.ref(`rooms/${roomCode}/players/${myId}`).set(networkPlayers[myId]);
             db.ref(`rooms/${roomCode}/players/${myId}`).onDisconnect().remove();
 
-            // Listen to Players joining/leaving
+            // Roster Listener
             db.ref(`rooms/${roomCode}/players`).on('value', snap => {
                 let players = snap.val() || {};
                 let updatedPlayers = {};
                 for(let pid in players) {
                     if (pid === myId) { updatedPlayers[pid] = networkPlayers[myId]; continue; }
                     if (!networkPlayers[pid]) {
-                        updatedPlayers[pid] = players[pid]; // New player
+                        updatedPlayers[pid] = players[pid];
                     } else {
-                        // Keep our lerp variables intact
                         let p = networkPlayers[pid]; let rp = players[pid];
                         p.name = rp.name; p.targetX = rp.x; p.targetY = rp.y; p.angle = rp.angle;
                         p.hp = rp.hp; p.maxHp = rp.maxHp; p.ult = rp.ult; p.dead = rp.dead; p.magnetRadius = rp.magnetRadius;
@@ -292,14 +306,13 @@
                 updateLobbyUI();
             });
 
-            // Listen to Game State (Clients Only)
+            // Client Sync Listener
             if(!isHost) {
                 db.ref(`rooms/${roomCode}/state`).on('value', snap => {
                     let data = snap.val();
                     if(!data) return;
                     sharedState = data.shared || sharedState;
                     
-                    // Inject Lerp Data for enemies
                     let en = data.enemies || {};
                     for(let eid in en) {
                         if(!entities.enemies[eid]) entities.enemies[eid] = en[eid];
@@ -307,7 +320,6 @@
                     }
                     for(let eid in entities.enemies) { if(!en[eid]) delete entities.enemies[eid]; }
 
-                    // Inject Lerp for gems
                     let gs = data.gems || {};
                     for(let gid in gs) {
                         if(!entities.gems[gid]) entities.gems[gid] = gs[gid];
@@ -325,7 +337,7 @@
                 });
             }
 
-            // Listen for Global Events (Chat, Bullets, Sounds)
+            // Fast Events (Bullets, VFX, Text)
             db.ref(`rooms/${roomCode}/events`).orderByChild('timestamp').startAt(joinTimestamp).on('child_added', snap => {
                 let ev = snap.val();
                 if(ev.type === 'CHAT') addChatMessage(ev.name, ev.msg);
@@ -344,17 +356,21 @@
                 }
                 else if(ev.type === 'LEVEL_UP') {
                     if (localPlayer.dead) {
-                        if (isHost) db.ref(`rooms/${roomCode}/readyPlayers/${myId}`).set(true);
-                        else db.ref(`rooms/${roomCode}/readyPlayers/${myId}`).set(true);
+                        db.ref(`rooms/${roomCode}/readyPlayers/${myId}`).set(true);
                     } else triggerUpgradeUI();
                 }
                 else if(ev.type === 'DAMAGE_TEXT') {
-                    // Spawn damage numbers
                     entities.texts.push(new FloatingText(ev.x, ev.y, ev.dmg, ev.color));
+                }
+                else if(ev.type === 'RESUME_GAME') {
+                    resumeGameClient();
+                }
+                else if(ev.type === 'WIN_GAME') {
+                    triggerWin();
                 }
             });
 
-            // Host specific listeners for upgrades
+            // Host upgrade listener
             if(isHost) {
                 db.ref(`rooms/${roomCode}/readyPlayers`).on('value', snap => {
                     let ready = snap.val() || {};
@@ -362,7 +378,7 @@
                     if(Object.keys(ready).length >= currentPlayers && sharedState.paused) {
                         sharedState.paused = false;
                         db.ref(`rooms/${roomCode}/readyPlayers`).remove();
-                        db.ref(`rooms/${roomCode}/events`).push({ type: 'RESUME_GAME', timestamp: firebase.database.ServerValue.TIMESTAMP });
+                        sendEvent({ type: 'RESUME_GAME' });
                         resumeGameClient();
                     }
                 });
@@ -549,8 +565,8 @@
                 sharedState.xp -= sharedState.xpNext; sharedState.level++;
                 sharedState.xpNext = Math.floor(sharedState.xpNext * 1.5);
                 sharedState.paused = true;
-                db.ref(`rooms/${roomCode}/readyPlayers`).remove(); // Reset ready state
-                sendEvent({ type: 'LEVEL_UP', shared: sharedState });
+                db.ref(`rooms/${roomCode}/readyPlayers`).remove();
+                sendEvent({ type: 'LEVEL_UP' });
                 
                 if (localPlayer.dead) {
                     db.ref(`rooms/${roomCode}/readyPlayers/${myId}`).set(true);
@@ -577,7 +593,6 @@
                     if(minDist < 17) {
                         sharedState.xp += g.val;
                         if(target.id === myId) localPlayer.ultCharge = Math.min(100, localPlayer.ultCharge + g.val * 0.5);
-                        // Network ult charge would require a specific DB push, simplifying here: everyone charges their own locally
                         delete entities.gems[gid];
                         sendEvent({ type: 'SFX', name: 'xp' });
                         checkLevelUp();
@@ -585,7 +600,6 @@
                 }
             }
 
-            // Endless Boss Spawning
             if(sharedState.time >= sharedState.nextBossTime && !entities.boss) {
                 entities.enemies = {}; 
                 entities.boss = { 
@@ -597,11 +611,10 @@
                 sendEvent({ type: 'SFX', name: 'ult' });
             }
 
-            // Spawn More Enemies Scaled by Player Count
             if(!entities.boss) {
                 let spawnRate = Math.max(0.1, 1.5 - (sharedState.time * 0.003)) / Math.max(1, playerCount);
                 if(Math.random() < (dt / spawnRate)) {
-                    let spawns = Math.ceil(playerCount * (1 + sharedState.time / 120)); // Spawn clusters
+                    let spawns = Math.ceil(playerCount * (1 + sharedState.time / 120)); 
                     for(let i=0; i<spawns; i++) {
                         let targetId = Object.keys(networkPlayers)[Math.floor(Math.random() * Object.keys(networkPlayers).length)];
                         let target = targetId === myId ? localPlayer : networkPlayers[targetId];
@@ -617,19 +630,17 @@
                 }
             }
 
-            // Boss Movement logic
             if(entities.boss) {
                 let b = entities.boss; 
                 b.timer -= dt;
 
-                // Boss slowly moves towards closest player
                 let closest = null, minDist = Infinity;[localPlayer, ...Object.values(networkPlayers)].forEach(p => {
                     if(!p.dead) { let d = MathUtils.dist(b.x,b.y,p.x,p.y); if(d < minDist){ minDist=d; closest=p; } }
                 });
                 
                 if (closest) {
                     let moveAngle = MathUtils.angle(b.x, b.y, closest.x, closest.y);
-                    b.x += Math.cos(moveAngle) * 40 * dt; // Boss Movement
+                    b.x += Math.cos(moveAngle) * 40 * dt; 
                     b.y += Math.sin(moveAngle) * 40 * dt;
                 }
 
@@ -684,15 +695,12 @@
                     u.apply(); 
                     container.style.display = 'none';
                     document.getElementById('waitingUpgradesText').classList.remove('hidden');
-                    db.ref(`rooms/${roomCode}/readyPlayers/${myId}`).set(true); // Tell Host we are ready
+                    db.ref(`rooms/${roomCode}/readyPlayers/${myId}`).set(true); 
                 };
                 container.appendChild(card);
             });
         }
 
-        /* =====================================================================
-           CORE LOOP & RENDERING
-           ===================================================================== */
         function startGame() {
             document.getElementById('lobbyScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
@@ -709,6 +717,17 @@
             requestAnimationFrame(gameLoop);
             
             if(isHost) sendEvent({ type: 'START_GAME' });
+        }
+
+        function triggerWin() {
+            gameState = STATE.WON;
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('teammates-ui').classList.add('hidden');
+            document.getElementById('spectateUI').classList.add('hidden');
+            document.getElementById('victoryScreen').classList.remove('hidden');
+            let m = Math.floor(sharedState.time/60).toString().padStart(2, '0');
+            let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
+            document.getElementById('victoryTime').innerText = `${m}:${s}`;
         }
 
         function findSpectateTarget() {
@@ -736,7 +755,7 @@
             let s = Math.floor(sharedState.time%60).toString().padStart(2, '0');
             document.getElementById('timeText').innerText = `${m}:${s}`;
 
-            if(entities.boss) {
+            if(entities.boss && !sharedState.bossDefeated) {
                 document.getElementById('bossWarning').classList.remove('hidden');
                 document.getElementById('bossHpContainer').classList.remove('hidden');
                 document.getElementById('bossHpBar').style.width = `${(entities.boss.hp / entities.boss.maxHp)*100}%`;
@@ -767,7 +786,6 @@
         let screenShake = 0;
 
         function update(dt) {
-            // LERP Remote Entities
             for(let id in networkPlayers) {
                 if(id !== myId) {
                     let p = networkPlayers[id];
@@ -805,24 +823,28 @@
                         if(MathUtils.dist(b.x, b.y, e.x, e.y) < b.r + 10 && !b.hitList.includes(eid)) {
                             b.hitList.push(eid);
                             spawnParticles(e.x, e.y, 2, '#f05', 100);
-                            sendEvent({ type: 'DAMAGE_TEXT', x: e.x, y: e.y, dmg: Math.floor(b.damage), color: '#fff' });
+                            
+                            sendEvent({ type: 'DAMAGE_TEXT', x: e.x, y: e.y - 20, dmg: Math.floor(b.damage), color: '#fff' });
 
-                            if (Math.random() < localPlayer.vampChance) localPlayer.hp = Math.min(localPlayer.maxHp, localPlayer.hp + 5);
+                            if (Math.random() < localPlayer.vampChance) {
+                                localPlayer.hp = Math.min(localPlayer.maxHp, localPlayer.hp + 5);
+                            }
 
                             if(isHost) { e.hp -= b.damage; if(e.hp<=0){ sharedState.xp += e.val; delete entities.enemies[eid]; entities.gems[nextEntityId++]={x:e.x,y:e.y,val:e.val}; WebAudioSynth.exp(); checkLevelUp();} }
-                            // Optimization: Host applies damage to stop DB overloading.
+                            
                             if(b.hitList.length >= b.pierce) b.marked = true;
                         }
                     }
                     if(entities.boss && MathUtils.dist(b.x, b.y, entities.boss.x, entities.boss.y) < b.r + 40 && !b.hitList.includes('boss')) {
                         b.hitList.push('boss'); spawnParticles(entities.boss.x, entities.boss.y, 5, '#f05', 150);
+                        
                         sendEvent({ type: 'DAMAGE_TEXT', x: entities.boss.x + MathUtils.rand(-20,20), y: entities.boss.y + MathUtils.rand(-20,20), dmg: Math.floor(b.damage), color: '#ff0' });
 
                         if(isHost) { 
                             entities.boss.hp -= b.damage; 
                             if(entities.boss.hp<=0){ 
                                 sharedState.bossesDefeated++; 
-                                sharedState.nextBossTime = sharedState.time + 180;
+                                sharedState.nextBossTime = sharedState.time + 180; // Endless Boss scaling
                                 entities.boss = null;
                                 sendEvent({ type: 'DAMAGE_TEXT', x: camera.x + cw/2, y: camera.y + ch/2, dmg: "BOSS DEFEATED", color: '#0f0' });
                             } 
@@ -854,7 +876,7 @@
 
             syncTimer -= dt;
             if(syncTimer <= 0) {
-                syncTimer = 0.05; // 20 hz network poll rate
+                syncTimer = 0.05; 
                 
                 networkPlayers[myId].x = localPlayer.x;
                 networkPlayers[myId].y = localPlayer.y;
@@ -865,17 +887,18 @@
                 networkPlayers[myId].angle = localPlayer.visualAngle;
                 networkPlayers[myId].magnetRadius = localPlayer.magnetRadius;
                 
-                // Write our player state directly
-                db.ref(`rooms/${roomCode}/players/${myId}`).set(networkPlayers[myId]);
+                if (dbAuthed) {
+                    db.ref(`rooms/${roomCode}/players/${myId}`).set(networkPlayers[myId]);
 
-                if(isHost) {
-                    db.ref(`rooms/${roomCode}/state`).set({
-                        enemies: entities.enemies,
-                        gems: entities.gems,
-                        boss: entities.boss,
-                        shared: sharedState
-                    });
-                } 
+                    if(isHost) {
+                        db.ref(`rooms/${roomCode}/state`).set({
+                            enemies: entities.enemies,
+                            gems: entities.gems,
+                            boss: entities.boss,
+                            shared: sharedState
+                        });
+                    } 
+                }
             }
 
             updateHUD();
@@ -922,7 +945,7 @@
             
             entities.bullets.forEach(b => b.draw(ctx));
             entities.particles.forEach(p => p.draw(ctx));
-            entities.texts.forEach(t => t.draw(ctx)); // Render Damage Text
+            entities.texts.forEach(t => t.draw(ctx));
 
             for(let id in networkPlayers) {
                 if(id !== myId && !networkPlayers[id].dead) {
