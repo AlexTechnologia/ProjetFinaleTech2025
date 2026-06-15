@@ -1,671 +1,322 @@
-
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alex Musial - Combined Portfolio</title>
-
-    <link rel="icon" type="image/x-icon" href="https://dl.dropbox.com/scl/fi/u85olqmw4jhnoq48swyay/capiage-image.png?rlkey=8yejddbtb372z9xdv1fdm5usl&st=0o72p3my&dl=0">
-    
-    <!-- FONTS (Combined from both files) -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --navy: #0a192f;
-            --light-navy: #112240;
-            --lightest-navy: #233554;
-            --navy-shadow: rgba(2, 12, 27, 0.7);
-            --slate: #8892b0;
-            --light-slate: #a8b2d1;
-            --lightest-slate: #ccd6f6;
-            --white: #e6f1ff;
-            --purple: #8162ff;
-            --purple-light: rgba(129, 98, 255, 0.2);
-            --font-sans: 'Inter', sans-serif;
-            --font-mono: 'Fira Code', monospace;
-            --fz-sm: 14px;
-            --fz-md: 16px;
-            --fz-lg: 18px;
-            --fz-xl: 20px;
-            --fz-heading: clamp(2rem, 5vw, 3.5rem);
-            --border-radius: 8px;
-            /* NEW: CSS variable for background image URL */
-            --background-image-url: url('https://dl.dropbox.com/scl/fi/jwwmx8v9dw3cu2bf4dyz0/4f5fe821-33db-4839-b010-a78cef883c54-removebg-preview.png?rlkey=orq5ypcdk5dwvvwcvc7nl4i0u&st=ws6grz0x&dl=0'); /* Example URL, change as needed */
-        }
-
-        html, body {
-            width: 100%;
-            /* height: 100%; REMOVED: This line was causing issues with content visibility and scroll animations. */
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
-            
-            background-color: var(--navy); /* Fallback color */
-            background-image: var(--background-image-url);
-            background-size: cover;
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-attachment: fixed; /* Makes the background fixed */
-            
-            color: var(--slate);
-            font-family: var(--font-sans);
-            cursor: none;
-        }
-
-        /* NEW: Styles for the fixed name */
-        #fixed-name {
-            position: fixed;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999; /* Adjusted: Above cursor, below loader */
-            color: var(--lightest-slate);
-            font-size: var(--fz-lg);
-            font-family: var(--font-sans);
-            pointer-events: none; /* So it doesn't interfere with clicks */
-        }
-
-        .loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: var(--navy); /* This will cover the body background during load */
-            display: flex; justify-content: center; align-items: center;
-            z-index: 10000;
-        }
-        .loading-logo {
-            width: 120px; height: 120px;
-            stroke: var(--purple); stroke-width: 2; fill: transparent;
-            stroke-dasharray: 2000; stroke-dashoffset: 2000;
-        }
-        
-        #cursor-container {
-            position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9998; /* Adjusted: Below fixed name */
-        }
-        .cursor-trail {
-            position: absolute; background: var(--purple); border-radius: 50%; will-change: transform;
-        }
-
-        #main-content { opacity: 0; visibility: hidden; }
-
-        #animation-container {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #pinned-scene {
-            position: absolute; top: 0; left: 0;
-            height: 100%; width: 100%;
-            display: flex; justify-content: center; align-items: center;
-            perspective: 2000px;
-        }
-        
-        .scene-element {
-            position: absolute;
-            will-change: transform, opacity;
-            transform-style: preserve-3d;
-            visibility: hidden;
-        }
-        
-        .intro-text-wrapper { text-align: center; }
-        .intro-text {
-            color: var(--lightest-slate);
-            font-size: clamp(3rem, 10vw, 7rem);
-            line-height: 1.1; font-weight: 700;
-            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
-        }
-        .intro-text .word { display: inline-block; transform: translateY(110%); }
-
-        #main-content .cert-card { /* Styles for cert-cards in the GSAP animation section */
-            display: flex; align-items: center; gap: 20px; padding: 15px 25px; min-width: 320px;
-            background: linear-gradient(145deg, rgba(35, 53, 84, 0.7), rgba(17, 34, 64, 0.7));
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--border-radius);
-            box-shadow: 0 8px 32px 0 var(--navy-shadow);
-            transform-style: preserve-3d;
-        }
-        #main-content .cert-icon svg { width: 35px; height: 35px; color: var(--purple); stroke-width: 1.5; }
-        #main-content .cert-text h3 { margin: 0; color: var(--lightest-slate); font-size: var(--fz-xl); }
-        #main-content .cert-text p { margin: 0; color: var(--slate); font-family: var(--font-mono); font-size: var(--fz-sm); }
-        #main-content .cert-card .highlight-ring {
-            position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px;
-            border-radius: 12px;
-            border: 2px solid var(--purple);
-            box-shadow: 0 0 20px var(--purple);
-            opacity: 0;
-        }
-
-        .narrative-panel { max-width: 480px; padding: 30px; /* Panels might have their own backgrounds, which is fine */ }
-        .narrative-panel h2 { font-size: var(--fz-heading); color: var(--purple); font-family: var(--font-mono); font-weight: 500; margin-bottom: 20px; }
-        .narrative-panel p { font-size: var(--fz-lg); line-height: 1.6; color: var(--light-slate); }
-        .code-snippet { font-family: var(--font-mono); font-size: var(--fz-sm); padding: 20px; margin-top: 20px; background-color: #011627; border-radius: var(--border-radius); color: #d6deeb; white-space: pre-wrap; border: 1px solid var(--lightest-navy); transform-origin: top center; }
-        .code-snippet .keyword { color: #c792ea; } .code-snippet .function { color: #82aaff; } .code-snippet .string { color: #c3e88d; } .code-snippet .comment { color: #637777; font-style: italic; }
-
-        .outro-text { font-size: var(--fz-heading); font-weight: bold; color: var(--lightest-slate); }
-        
-        #subsequent-content { 
-            position: relative; 
-            background-color: transparent; /* MODIFIED: Allow body background to show through */
-            z-index: 2;
-        }
-        #final-page-content { 
-            padding: 150px 20px; 
-            text-align: center; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            background-color: rgba(17, 34, 64, 0.9); /* NEW: Semi-transparent background for readability --light-navy @ 90% opacity */
-        }
-        #final-page-content h1 { font-size: clamp(2.5rem, 7vw, 5rem); margin-bottom: 20px; color: var(--lightest-slate); }
-        #final-page-content p { max-width: 600px; margin: 0 auto 40px; font-size: var(--fz-lg); }
-        #final-page-content .contact-button { color: var(--purple); background-color: transparent; border: 1px solid var(--purple); border-radius: var(--border-radius); padding: 1.25rem 1.75rem; font-size: var(--fz-md); font-family: var(--font-mono); text-decoration: none; transition: all 0.3s; }
-        #final-page-content .contact-button:hover { background-color: var(--purple-light); box-shadow: 0 0 20px var(--purple-light); }
-    </style>
-
-    <style>
-        #portfolio-part-2 { --border-radius: 12px; }
-        #portfolio-part-2 .container { max-width: 900px; margin: 100px auto 0; padding: 32px 8px 80px 8px; }
-        #portfolio-part-2 header { background: linear-gradient(90deg, #8162ff33 0%, #0a192f 100%); border-radius: var(--border-radius); padding: 32px 24px 24px 24px; margin-bottom: 36px; box-shadow: 0 6px 24px rgba(2,12,27,0.13); text-align: center; }
-        #portfolio-part-2 header h1 { font-size: 2.5rem; color: var(--lightest-slate); margin-bottom: 0.3em;}
-        #portfolio-part-2 header .meta { color: var(--light-slate); font-family: var(--font-mono); font-size: 1.1em;}
-        #portfolio-part-2 section { background: rgba(17,34,64,0.92); border-radius: var(--border-radius); margin-bottom: 32px; padding: 28px 24px; box-shadow: 0 2px 12px rgba(2,12,27,0.08); opacity: 0; transform: translateY(40px) scale(0.98); }
-        #portfolio-part-2 section.animated { opacity: 1 !important; transform: translateY(0) scale(1) !important; transition: opacity 0.8s cubic-bezier(.77,0,.18,1), transform 0.9s cubic-bezier(.77,0,.18,1); }
-        #portfolio-part-2 section h2 { color: var(--purple); font-family: var(--font-mono); font-size: 1.5em; margin-top: 0;}
-        #portfolio-part-2 section h3 { color: var(--lightest-slate); }
-        
-        #portfolio-part-2 .certificates { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 20px; }
-        
-        /* Updated Cert Card styles for sec-certif */
-        #portfolio-part-2 #sec-certif .cert-card {
-            background: linear-gradient(135deg, rgba(35, 53, 84, 0.7), rgba(17, 34, 64, 0.7));
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 16px 0 rgba(2,12,27,0.10);
-            min-width: 260px;
-            max-width: 350px; 
-            color: var(--lightest-slate);
-            font-size: 1em;
-            position: relative;
-            flex: 1 1 260px;
-            opacity: 0;
-            transform: scale(0.9) translateY(30px);
-            transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1);
-            padding: 0; 
-            display: flex;
-            flex-direction: column;
-            overflow: hidden; 
-        }
-
-        #portfolio-part-2 #sec-certif .cert-card.visible { opacity: 1 !important; transform: scale(1) translateY(0) !important; }
-
-        #portfolio-part-2 #sec-certif .cert-image {
-            width: 100%;
-            aspect-ratio: 4 / 3; 
-            object-fit: cover;
-            display: block; 
-        }
-
-        #portfolio-part-2 #sec-certif .cert-details {
-            padding: 15px 18px; 
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1; 
-        }
-
-        #portfolio-part-2 #sec-certif .cert-card .cert-title { color: var(--purple); font-weight: bold; font-size: 1.08em; margin-bottom: 4px; margin-top:0; }
-        #portfolio-part-2 #sec-certif .cert-card .cert-date { font-size: 0.93em; color: var(--light-slate); margin-bottom: 2px; }
-        #portfolio-part-2 #sec-certif .cert-card .cert-org { font-size: 0.93em; color: var(--slate); margin-bottom: 2px; }
-        #portfolio-part-2 #sec-certif .cert-card .cert-instructor { font-size: 0.93em; color: var(--slate); margin-bottom: 8px; }
-        #portfolio-part-2 #sec-certif .cert-card .cert-desc { 
-            font-size: 0.93em; 
-            color: var(--lightest-slate); 
-            line-height: 1.5;
-            margin-top: 0; 
-            flex-grow: 1;
-        }
-        
-        /* Project Section Styles */
-        #portfolio-part-2 .projects-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        #portfolio-part-2 .project-card {
-            background: linear-gradient(135deg, rgba(35, 53, 84, 0.85), rgba(17, 34, 64, 0.85));
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: var(--border-radius);
-            box-shadow: 0 5px 20px 0 rgba(2,12,27,0.15);
-            min-width: 270px; 
-            max-width: 330px; 
-            /* padding: 22px 24px; MODIFIED: Moved to .project-card-content */
-            padding: 0; /* NEW */
-            overflow: hidden; /* NEW */
-            color: var(--lightest-slate);
-            position: relative;
-            flex: 1 1 280px;
-            opacity: 0;
-            transform: scale(0.9) translateY(30px);
-            transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1), box-shadow 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            /* justify-content: space-between; REMOVED: Handled by inner flex container */
-        }
-
-        #portfolio-part-2 .project-card:hover {
-            box-shadow: 0 8px 35px 0 var(--navy-shadow), 0 0 15px var(--purple-light);
-            transform: scale(1.02) translateY(-5px);
-        }
-
-        #portfolio-part-2 .project-card.visible {
-            opacity: 1 !important;
-            transform: scale(1) translateY(0) !important;
-        }
-        
-        /* NEW: Styles for project images */
-        #portfolio-part-2 .project-image {
-            width: 100%;
-            aspect-ratio: 4 / 3;
-            object-fit: cover;
-            display: block;
-        }
-
-        /* NEW: Styles for project card content wrapper */
-        #portfolio-part-2 .project-card-content {
-            padding: 22px 24px; /* Original padding from .project-card */
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1; /* Allows content to fill card and button to align bottom */
-        }
-
-        #portfolio-part-2 .project-icon {
-            margin-bottom: 15px;
-            color: var(--purple);
-            height: 32px;
-        }
-        #portfolio-part-2 .project-icon svg {
-            width: 32px;
-            height: 32px;
-        }
-
-        #portfolio-part-2 .project-title {
-            color: var(--purple);
-            font-family: var(--font-sans);
-            font-weight: 600;
-            font-size: 1.2em; 
-            margin-bottom: 8px;
-        }
-
-        #portfolio-part-2 .project-desc {
-            font-size: 0.98em;
-            color: var(--light-slate);
-            margin-bottom: 18px;
-            line-height: 1.5;
-            flex-grow: 1; /* Ensures description takes available space */
-        }
-
-        #portfolio-part-2 .project-link-button {
-            color: var(--purple);
-            background-color: transparent;
-            border: 1px solid var(--purple);
-            border-radius: var(--border-radius);
-            padding: 0.7rem 1.15rem; 
-            font-size: var(--fz-sm);
-            font-family: var(--font-mono);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            display: inline-block; 
-            text-align: center;
-            margin-top: auto; /* Pushes button to the bottom of the flex container */
-            align-self: flex-start;
-        }
-
-        #portfolio-part-2 .project-link-button:hover {
-            background-color: var(--purple-light);
-            box-shadow: 0 0 15px var(--purple-light);
-        }
-        /* End Project Section Styles */
-
-        #portfolio-part-2 .reflection-q { font-weight: bold; color: var(--purple);}
-        #portfolio-part-2 .skills-list, #portfolio-part-2 .skills-list-2 { display: flex; flex-wrap: wrap; gap: 14px 18px; margin: 8px 0 0 0; padding: 0; list-style: none; }
-        #portfolio-part-2 .skills-list li, #portfolio-part-2 .skills-list-2 li { background: #233554; color: var(--lightest-slate); border-radius: 5px; padding: 3px 11px; font-size: 1em; font-family: var(--font-mono); }
-        #portfolio-part-2 .footer { text-align: center; color: var(--slate); font-size: 1em; margin-top: 40px; opacity: 0; transform: translateY(40px); transition: opacity 0.7s cubic-bezier(.77,0,.18,1), transform 0.8s cubic-bezier(.77,0,.18,1); }
-        #portfolio-part-2 .footer.animated { opacity: 1 !important; transform: translateY(0) !important; }
-        #portfolio-part-2 .contact-button { color: var(--purple); background-color: transparent; border: 1px solid var(--purple); border-radius: 4px; padding: 0.75rem 1.25rem; font-size: var(--fz-md); font-family: var(--font-mono); text-decoration: none; transition: all 0.3s; display: inline-block; }
-        #portfolio-part-2 .contact-button:hover { background-color: var(--purple-light); }
-        @media (max-width: 700px) { #portfolio-part-2 .certificates, #portfolio-part-2 .projects-grid { flex-direction: column; align-items: stretch; } #portfolio-part-2 .container { padding: 8px 2vw 40px 2vw; } #portfolio-part-2 section { padding: 16px 6vw; } #portfolio-part-2 .project-card, #portfolio-part-2 #sec-certif .cert-card { max-width: none; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lure Discrimination Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
+<body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-blue-500/30">
 
-<body>
-    <!-- NEW: Fixed Name Element -->
-    <div id="fixed-name"><b>Alex Musial - Portfolio</b></div>
+  <div id="root"></div>
 
-    <div class="loading-screen">
-         <svg class="loading-logo" viewBox="0 0 100 100">
-             <path d="M 50,5 L 85,30 L 85,70 L 50,95 L 15,70 L 15,30 Z M 15,30 L 50,50 L 85,30 M 50,95 L 50,50"></path>
-         </svg>
-    </div>
-    
-    <div id="cursor-container"></div>
-    
-    <div id="main-content">
-        <div id="scroll-container">
-            <div id="animation-container">
-                <div id="pinned-scene">
-                    <div id="intro-text" class="scene-element intro-text"></div>
-                    <div id="cert-hardware" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25zm.75-12h9v9h-9v-9z" /></svg></div><div class="cert-text"><h3>Les bases du matériel informatique</h3><p>Fondamentaux Hardware</p></div></div></div>
-                    <div id="cert-html" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg></div><div class="cert-text"><h3>HTML Essentials</h3><p>Développement Web</p></div></div></div>
-                    <div id="cert-js1" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" /></svg></div><div class="cert-text"><h3>JavaScript Essentials 1</h3><p>Interactivité Web</p></div></div></div>
-                    <div id="cert-python1" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg></div><div class="cert-text"><h3>Python Essentials 1</h3><p>Programmation Fondamentale</p></div></div></div>
-                    <div id="cert-python2" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V5.75A2.25 2.25 0 0018 3.5H6A2.25 2.25 0 003.75 5.75v12.5A2.25 2.25 0 006 20.25z" /></svg></div><div class="cert-text"><h3>Python Essentials 2</h3><p>Programmation Avancée</p></div></div></div>
-                    <div id="cert-linux" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z" /></svg></div><div class="cert-text"><h3>Linux Unhatched</h3><p>Systèmes d'Exploitation</p></div></div></div>
-                    <div id="cert-data" class="scene-element"><div class="highlight-ring"></div><div class="cert-card"><div class="cert-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75A1.125 1.125 0 0119.875 21h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg></div><div class="cert-text"><h3>Science des données</h3><p>Analyse et Visualisation</p></div></div></div>
-                    <div id="narrative-python" class="scene-element narrative-panel glass-ui"><h2 class="narrative-title">Maîtrise de Python</h2><p class="narrative-p">La programmation orientée objet en Python a été essentielle, me permettant de structurer des applications complexes de manière logique et maintenable, comme dans le projet de gamification.</p><div class="code-snippet"><pre><span class="comment"># Gamification en classe</span><br><span class="keyword">class</span> Student:<br>  <span class="keyword">def</span> <span class="function">__init__</span>(self, name):<br>    self.points = 0<br>    <br>  <span class="keyword">def</span> <span class="function">add_points</span>(self, amount):<br>    self.points += amount</span></pre></div></div>
-                    <div id="narrative-data" class="scene-element narrative-panel glass-ui"><h2 class="narrative-title">Analyse des Données en Médecine</h2><p class="narrative-p">J'ai choisi de me concentrer sur la certification "Introduction à la science des données" car elle est éminemment pertinente pour mon objectif de carrière en médecine. Ce cours m'a appris les étapes fondamentales de la gestion des données, de leur collecte et nettoyage à leur analyse et visualisation. Ce qui m'a le plus surpris fut l'ampleur du travail de préparation des données ("data wrangling"). La phase de nettoyage s'est avérée la plus difficile, car toute erreur peut biaiser les conclusions.</p></div>
-                    <div id="narrative-js" class="scene-element narrative-panel glass-ui"><h2 class="narrative-title">Animation Web</h2><p class="narrative-p">Utiliser des bibliothèques puissantes comme GSAP pour créer des expériences web mémorables. L'animation n'est pas une fioriture, mais un outil pour guider l'utilisateur et raconter une histoire.</p></div>
-                    <div id="narrative-journey" class="scene-element narrative-panel glass-ui"><h2 class="narrative-title">Mon Parcours d'Apprentissage</h2><p class="narrative-p">Je souhaite obtenir plusieurs certifications proposées par NetAcad pour explorer les différents domaines de I.T avant d'étudier un domaine. Les cours tels que Linux Unhatched vous introduisent bien aux systèmes d'exploitation tandis que l'Introduction à la science des données vous permet de voir comment analyser et comment faire agir les données un domaine en pleine croissance. En découvrant ces différents chemins j'aurai les clés en main pour mieux connaître ce qui me plaît et ce que je fais bien.</p></div>
-                    <div id="outro-text" class="scene-element outro-text">Mon Savoir-Faire.</div>
-                </div>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // --- HELPER FUNCTION ---
+    // Helper to shuffle the lure options (but NOT the original) in a legitimate test.
+    // However, to replicate the static grid from the user image, we will hard-code the grid.
+    const getGridOptions = () => {
+      return [
+        { id: 'lure1', type: 'color_br_black', label: 'Option 1' },
+        { id: 'original', type: 'original', label: 'Option 2' },
+        { id: 'lure2', type: 'swap_top_bot', label: 'Option 3' },
+        { id: 'lure3', type: 'missing_link_top', label: 'Option 4' },
+      ];
+    };
+
+    // --- INLINE ICON COMPONENTS ---
+    const BrainCircuit = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/>
+        <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/>
+        <path d="M12 5v14"/><path d="M12 12h6"/>
+      </svg>
+    );
+
+    const Play = ({ size = 24, className = "", fill = "none" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <polygon points="6 3 20 12 6 21 6 3"/>
+      </svg>
+    );
+
+    const CheckCircle2 = ({ size = 24, className = "", strokeWidth = 2.5 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+      </svg>
+    );
+
+    const XCircle = ({ size = 24, className = "", strokeWidth = 2.5 }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>
+      </svg>
+    );
+
+    const Eye = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    );
+
+    const RefreshCw = ({ size = 24, className = "" }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/>
+      </svg>
+    );
+
+    // --- REDESIGNED 6-NODE NEURAL NETWORK SVG COMPONENT ---
+    const NeuralNetwork = ({ type, showLabel }) => {
+      // Base standard node colors for a complete 6-node pattern
+      // Matching images as closely as possible using Tailwind color values
+      let top_blue = '#60a5fa';   // blue-400
+      let tr_green = '#22c55e';   // green-500
+      let br_orange = '#f97316';  // orange-500
+      let bot_red = '#f87171';    // red-400 (closer to pink-red in image)
+      let bl_purple = '#a855f7';  // purple-500
+      let tl_pink = '#ec4899';    // pink-500 (magenta)
+      
+      // Base standard radial links (true = exists, false = missing)
+      let link_top_center = true;
+      let link_tr_center = true;
+      let link_br_center = true;
+      let link_bot_center = true;
+      let link_bl_center = true;
+      let link_tl_center = true;
+
+      // Apply Lures (Modifications based on images)
+      let errorText = "";
+      if (type === 'color_br_black') {
+        br_orange = '#000000'; // Black Lure node
+        errorText = "Wrong Node Color (Black vs Orange)";
+      }
+      if (type === 'swap_top_bot') {
+        // Swap colors of Top (Blue) and Bottom (Red) nodes
+        [top_blue, bot_red] = [bot_red, top_blue];
+        errorText = "Swapped Node Colors (Top/Bot)";
+      }
+      if (type === 'missing_link_top') {
+        link_top_center = false; // Missing the link from Top (Blue) node to center
+        errorText = "Missing Neural Link";
+      }
+
+      const isOriginal = type === 'original';
+
+      return (
+        <div className="relative w-full aspect-square flex flex-col items-center">
+          <svg viewBox="0 0 200 200" className="w-full h-full bg-slate-900 rounded-xl shadow-inner border border-slate-700">
+            {/* --- Radial Links / Synapses connecting all 6 nodes to center --- */}
+            <line x1="100" y1="100" x2="100" y2="30" stroke="#475569" strokeWidth="4" className={`${!link_top_center ? 'opacity-0' : ''}`} /> {/* Top */}
+            <line x1="100" y1="100" x2="161" y2="65" stroke="#475569" strokeWidth="4" className={`${!link_tr_center ? 'opacity-0' : ''}`} /> {/* Top-Right */}
+            <line x1="100" y1="100" x2="161" y2="135" stroke="#475569" strokeWidth="4" className={`${!link_br_center ? 'opacity-0' : ''}`} /> {/* Bottom-Right */}
+            <line x1="100" y1="100" x2="100" y2="170" stroke="#475569" strokeWidth="4" className={`${!link_bot_center ? 'opacity-0' : ''}`} /> {/* Bottom */}
+            <line x1="100" y1="100" x2="39" y2="135" stroke="#475569" strokeWidth="4" className={`${!link_bl_center ? 'opacity-0' : ''}`} /> {/* Bottom-Left */}
+            <line x1="100" y1="100" x2="39" y2="65" stroke="#475569" strokeWidth="4" className={`${!link_tl_center ? 'opacity-0' : ''}`} /> {/* Top-Left */}
+            
+            {/* Subtle center marker */}
+            <circle cx="100" cy="100" r="5" fill="#e2e8f0" />
+
+            {/* --- Outer Ring Links --- (Optional, can be hidden for simplicity as not visible in images)
+            <line x1="100" y1="30" x2="161" y2="65" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />  
+            <line x1="161" y1="65" x2="161" y2="135" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+            <line x1="161" y1="135" x2="100" y2="170" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+            <line x1="100" y1="170" x2="39" y2="135" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+            <line x1="39" y1="135" x2="39" y2="65" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+            <line x1="39" y1="65" x2="100" y2="30" stroke="#334155" strokeWidth="1" strokeDasharray="4 4" />
+            --- */}
+
+            {/* --- Nodes / Neurons --- (A complete hexagonal ring) */}
+            <circle cx="100" cy="30" r="15" fill={top_blue} /> {/* Top */}
+            <circle cx="161" cy="65" r="15" fill={tr_green} /> {/* Top-Right */}
+            <circle cx="161" cy="135" r="15" fill={br_orange} /> {/* Bottom-Right */}
+            <circle cx="100" cy="170" r="15" fill={bot_red} /> {/* Bottom */}
+            <circle cx="39" cy="135" r="15" fill={bl_purple} /> {/* Bottom-Left */}
+            <circle cx="39" cy="65" r="15" fill={tl_pink} /> {/* Top-Left */}
+          </svg>
+
+          {/* Result Overlays */}
+          {showLabel && (
+            <div className={`absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-sm font-bold whitespace-nowrap shadow-lg ${isOriginal ? 'bg-green-500/90 text-slate-950' : 'bg-red-500/90 text-white'}`}>
+              {isOriginal ? 'The Original' : errorText}
             </div>
+          )}
+          {showLabel && isOriginal && (
+            <div className="absolute top-4 right-4 text-green-400 bg-slate-950 rounded-full">
+              <CheckCircle2 size={32} />
+            </div>
+          )}
+          {showLabel && !isOriginal && (
+            <div className="absolute top-4 right-4 text-red-400 bg-slate-950 rounded-full">
+              <XCircle size={32} />
+            </div>
+          )}
         </div>
-        <div id="subsequent-content">
-            <div id="final-page-content">
-                 <h1>Continue En Bas.</h1>
-                 <p>Mon parcours d'apprentissage est continu, avec 7 certifications Cisco NetAcad complétées. Chaque certification est une nouvelle étape vers mon objectif de carrière combinant technologie et médecine. Je suis impatient de voir où la prochaine aventure me mènera.</p>
-                <a href="mailto:alex.musial.demo@email.com" class="contact-button">Discutons-en</a>
-            </div>
-            <div id="portfolio-part-2">
-                <div class="container">
-                    <header>
-                      <h1>Portfolio numérique – Enjeux, compétences et certifications</h1>
-                      <div class="meta">Nom : Alex Musial<br>Cours : ICS3U<br>Date : 19 juin 2025</div>
-                    </header>
+      );
+    };
 
-                    <section id="sec-projects">
-                        <h2>Mes Projets Réalisés</h2>
-                        <div class="projects-grid">
-                            <div class="project-card">
-                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/tq0imi2c68paykdavxsee/Screenshot-2025-06-18-123705.jpg?rlkey=gdpqnen1gumh9k9o20b8k0bdx&st=38l49glk&dl=0" alt="Aperçu du projet Figma UI/UX">
-                                <div class="project-card-content">
-                                    <div class="project-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="project-title">Prototype UI/UX (Figma)</h3>
-                                        <p class="project-desc">Conception et prototypage d'une interface utilisateur interactive en utilisant Figma pour explorer des concepts visuels et fonctionnels.</p>
-                                    </div>
-                                    <a href="https://www.figma.com/proto/H9njjVujViUnaJ0mezwMdW/Untitled?node-id=3-2&t=LJ1o6elOzAO6JP2B-1&authuser=0&starting-point-node-id=3%3A2" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
-                                </div>
-                            </div>
-                            <div class="project-card">
-                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/iadmlrf0fi3yeiw5er0t2/Screenshot-2025-06-18-123509.jpg?rlkey=czd6o9gyvdj79uxv6pru02jcc&st=xocycasd&dl=0" alt="Aperçu du projet Portfolio Web Statique">
-                                <div class="project-card-content">
-                                    <div class="project-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" /></svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="project-title">Portfolio Web Statique</h3>
-                                        <p class="project-desc">Une première version de mon portfolio personnel, développé avec HTML et CSS pour présenter mes compétences initiales en développement web.</p>
-                                    </div>
-                                    <a href="https://alexmusial.w3spaces.com/index.html" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
-                                </div>
-                            </div>
-                            <div class="project-card">
-                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/ae4tpi3u7hebf7sykh4pw/Screenshot-2025-06-18-122819.jpg?rlkey=gmu49gmd498tvg0t8kx1mh2yj&st=ku39buwq&dl=0" alt="Aperçu du projet Jeu 2D en JavaScript">
-                                <div class="project-card-content">
-                                    <div class="project-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.314.06a15.092 15.092 0 01-2.49_2.49c-.04.055-.079.112-.118.17M4.5 12H3m18 0h-1.5m-15 0a3 3 0 100 6h12a3 3 0 100-6M4.5 12a3 3 0 110-6h12a3 3 0 110 6" /></svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="project-title">Jeu 2D en JavaScript</h3>
-                                        <p class="project-desc">Un jeu 2D interactif, créé avec HTML, CSS et JavaScript, démontrant les bases de la logique de jeu et de la manipulation du DOM.</p>
-                                    </div>
-                                    <a href="https://alexmusial.w3spaces.com/jeux2d.html?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
-                                </div>
-                            </div>
-                            <div class="project-card">
-                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/nzftha2p8774g6tfm0g97/Screenshot-2025-06-18-122224.jpg?rlkey=ylbhgmwpbtspi6x51m4w1vduj&st=93mf91v6&dl=0" alt="Aperçu du projet Python PDF">
-                                <div class="project-card-content">
-                                    <div class="project-icon">
-                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="project-title">Projet Python (PDF)</h3>
-                                        <p class="project-desc">Un script Python, probablement pour la manipulation ou la génération de documents PDF, montrant des compétences en programmation backend.</p>
-                                    </div>
-                                    <a href="https://drive.google.com/file/d/1orbno7R7gljpphHBybPI82U-Cwu0_MlP/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
-                                </div>
-                            </div>
-                            <div class="project-card">
-                                <img class="project-image" src="https://dl.dropbox.com/scl/fi/z18sp9bl2e800lf8a8aq9/Screenshot-2025-06-18-121631.jpg?rlkey=5g1kx8uuoc55c36kx09oaxz1g&st=9mh2pqfa&dl=0" alt="Aperçu du projet App Web Réfrancisation">
-                                <div class="project-card-content">
-                                    <div class="project-icon">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 17.25v-.228a4.5 4.5 0 00-.12-1.03l-2.268-9.64a3.375 3.375 0 00-3.285-2.602H7.923a3.375 3.375 0 00-3.285 2.602l-2.268 9.64a4.5 4.5 0 00-.12 1.03v.228m19.5 0a3 3 0 01-3 3H5.25a3 3 0 01-3-3m19.5 0a3 3 0 00-3-3H5.25a3 3 0 00-3 3m16.5 0h.008v.008h-.008v-.008zm-3 0h.008v.008h-.008v-.008z" /></svg>
-                                    </div>
-                                    <div>
-                                        <h3 class="project-title">App Web 'Réfrancisation'</h3>
-                                        <p class="project-desc">Une application web interactive développée pour un projet de réfrancisation, déployée sur Vercel, combinant frontend et potentiellement backend.</p>
-                                    </div>
-                                    <a href="https://prdg-refrancisation.vercel.app/?authuser=0" target="_blank" rel="noopener noreferrer" class="project-link-button">Voir le Projet</a>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+    // --- MAIN APPLICATION COMPONENT ---
+    function App() {
+      const [step, setStep] = useState('intro'); // intro, memorize, test, result
+      const [timeLeft, setTimeLeft] = useState(3);
+      // Generate randomized options, but for strict adherence to user image, we'll keep the grid order from image_3.png
+      const [options, setOptions] = useState(() => getGridOptions());
+      const [score, setScore] = useState(0);
+      const [round, setRound] = useState(1);
 
-                    <section id="sec-reflexion"><h2>2. Réflexion personnelle sur mon cheminement</h2><p><span class="reflection-q">Qu’ai-je appris ce semestre dans le domaine de l’informatique ?</span><br>Ce semestre, j’ai développé des compétences en programmation Python, JavaScript et HTML, en gestion de données, en animation web et en administration de systèmes Linux. J’ai appris à concevoir des applications interactives, à analyser des jeux de données réels, et à comprendre l’importance de la sécurité et de l’organisation dans les systèmes informatiques.</p><p><span class="reflection-q">Quelles difficultés ai-je rencontrées et comment les ai-je surmontées ?</span><br>La plus grande difficulté a été la gestion de données réelles : le nettoyage (data wrangling) est complexe et demande de la rigueur. J’ai aussi parfois eu du mal à structurer des projets plus longs. J’ai surmonté ces défis en me formant avec des ressources complémentaires, en demandant de l’aide à mes pairs, et en divisant les tâches en étapes plus petites et gérables.</p><p><span class="reflection-q">Qu’est-ce qui m’a motivé ou surpris dans mon apprentissage ?</span><br>J’ai été surpris par l’impact concret de l’informatique en médecine : la possibilité d’analyser de grands ensembles de données pour améliorer la prévention et le diagnostic. Ce lien avec la santé m’a motivé à approfondir la science des données.</p></section>
-                    <section id="sec-certif">
-                        <h2>3. Résumé de ma certification Cisco et enjeux</h2>
-                        <div class="certificates">
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/fsucfcbcvfg0rz3qh3osn/_certificate_alexmusial551-gmail-com_e6012c47-19cd-4f89-8186-469e0a5534bf-1.png?rlkey=7df8iitiyjk7aerzlnw4uyeat&st=to16b2kg&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">Introduction à la science des données</div>
-                                    <div class="cert-date">13 juin 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Ce cours m’a permis de comprendre les étapes fondamentales de la gestion des données, de leur collecte et nettoyage à leur analyse et visualisation. J’ai pris conscience de l’importance du travail préparatoire sur les données, et de l’impact de l’analyse sur la médecine personnalisée.</div>
-                                </div>
-                            </div>
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/ylwtwx5sd12jy1ydc8uan/_certificate_alexmusial551-gmail-com_7792bc63-fa68-4a2e-8509-190ffa7332a5-1-1.png?rlkey=ofn1qqjqdo575udcdjxr01sr7&st=6qhzdmim&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">Les bases du matériel informatique</div>
-                                    <div class="cert-date">10 juin 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Apprentissage des composants essentiels d'un ordinateur et de leur fonctionnement.</div>
-                                </div>
-                            </div>
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/ea5r854jtma30hj21cv6l/_certificate_alexmusial551-gmail-com_cacbe5e2-3d3c-456d-9c22-190139c0e2d6-1.png?rlkey=ufdv6iznh5c71msx0du4fxjyx&st=7a9sm36f&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">HTML Essentials</div>
-                                    <div class="cert-date">12 avril 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Fondamentaux du langage HTML pour la structuration de pages web.</div>
-                                </div>
-                            </div>
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/f8oftgsvky9k16qqcc48a/_certificate_alexmusial551-gmail-com_8507d218-3942-4db1-8765-10770a511b89-1.png?rlkey=1zsrlwsbczpdlo313rf3dp5pm&st=k83ttdpj&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">JavaScript Essentials 1</div>
-                                    <div class="cert-date">14 avril 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Introduction à la programmation JavaScript pour l'interactivité web.</div>
-                                </div>
-                            </div>
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/43vvtyubosv0hxb7zmo8t/_certificate_alexmusial551-gmail-com_a8179f73-6a51-420d-90a5-4b6ae7512c64-1-1.png?rlkey=zmw0nncx44a9e8ephymcbw1cy&st=qhh8wilk&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">Python Essentials 1</div>
-                                    <div class="cert-date">16 avril 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Bases de la programmation avec le langage Python.</div>
-                                </div>
-                            </div>
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/padb906ya4zlvu75u1gvf/_certificate_alexmusial551-gmail-com_501b19fc-82f9-4a00-a513-fe683c2f1b22-1.png?rlkey=h8xhpoo2o19pt4mhpad7wqar1&st=bopy7jrg&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">Python Essentials 2</div>
-                                    <div class="cert-date">11 juin 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Concepts avancés de la programmation Python et modules.</div>
-                                </div>
-                            </div>
-                            <div class="cert-card">
-                                <img class="cert-image" src="https://dl.dropbox.com/scl/fi/0i8rvj835s1yic8ocdnvv/_certificate_alexmusial551-gmail-com_30c1a700-8571-4627-8d25-9d1abb0c40d7-1.png?rlkey=s0l6g1rx9bng3e19jygrb7soy&st=7ftthydk&dl=0" alt="Certification Badge">
-                                <div class="cert-details">
-                                    <div class="cert-title">Linux Unhatched</div>
-                                    <div class="cert-date">13 juin 2025</div>
-                                    <div class="cert-org">Père-René-de-Galinée (Cisco Networking Academy)</div>
-                                    <div class="cert-instructor">Normand Lampron, Instructeur</div>
-                                    <div class="cert-desc">Introduction aux bases du système d'exploitation Linux et commandes.</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="margin-top:22px;"><span class="reflection-q">Lien avec mes intérêts :</span><br>J’ai choisi la certification « Introduction à la science des données » car elle correspond à mon intérêt pour la médecine et l’analyse de données. J’ai appris à extraire des informations pertinentes à partir de données brutes, ce qui me permettra d’apporter une contribution à la médecine personnalisée et à la santé publique.</div>
-                        <div style="margin-top:12px;"><span class="reflection-q">Applications concrètes :</span><br>L’analyse des données permet d’optimiser la logistique hospitalière, de réduire les listes d’attente et d’identifier des modèles pour des diagnostics plus précis. L’impact potentiel de ces outils est immense pour la société.</div>
-                        <div style="margin-top:12px;"><span class="reflection-q">Impact de la technologie :</span><br>L’utilisation de la science des données en médecine soulève aussi des enjeux éthiques (confidentialité), juridiques (protection des données), et d’accessibilité (équité d’accès aux soins).</div>
-                    </section>
-                    <section id="sec-avenir"><h2>4. Réflexion sur mon avenir professionnel ou académique</h2><p>Je souhaite poursuivre des études en médecine, tout en continuant à développer mes compétences en informatique, notamment en science des données et en intelligence artificielle. Je possède déjà des bases solide en programmation, en analyse de données et en administration de systèmes. Pour intégrer une université, je vais préparer mon dossier scolaire, rédiger une lettre de motivation et me préparer à des entrevues ou à des évaluations techniques.</p><ul class="skills-list"><li>Programmation Python</li><li>Analyse de données</li><li>Développement web (HTML, JS)</li><li>Linux</li><li>Animation web</li><li>Résolution de problèmes</li></ul><p style="margin-top:12px;">Je me sens prêt à participer à une entrevue d’admission, à rencontrer un conseiller d’orientation ou à passer une évaluation en milieu professionnel, grâce à ma préparation et à mon engagement.</p></section>
-                    <section id="sec-savoir"><h2>5. Réflexion sur le savoir-être au travail</h2><div><span class="reflection-q">a) Compétences personnelles (au moins 6) :</span><ul class="skills-list-2"><li>Travail en équipe</li><li>Résolution de problèmes</li><li>Organisation</li><li>Fiabilité</li><li>Initiative</li><li>Informatique</li><li>Communication verbale</li></ul></div><div style="margin-top:10px;"><span class="reflection-q">b) Compétences recherchées dans mon secteur :</span><ul class="skills-list-2"><li>Analyse de données</li><li>Résolution de problèmes</li><li>Informatique</li><li>Travail en autonomie</li><li>Organisation</li><li>Communication</li></ul></div><div style="margin-top:10px;"><span class="reflection-q">c) Analyse personnelle :</span><br>Oui, je possède déjà plusieurs des compétences les plus recherchées, comme la résolution de problèmes, l’informatique et l’organisation. Par exemple, lors de projets de programmation, j’ai su collaborer avec d’autres élèves, organiser mon travail, et prendre des initiatives pour résoudre des bugs complexes. Je dois encore améliorer ma gestion du stress et ma capacité à communiquer des résultats techniques à un public non spécialiste.</div><div style="margin-top:12px;"><span class="reflection-q">Suis-je prêt pour le secteur visé ?</span><br>Je me sens prêt à exercer dans le domaine de l’informatique appliquée à la santé, mais je vais continuer à développer mes compétences en communication et à rester à jour sur les enjeux éthiques et technologiques du secteur.</div></section>
-                    <section id="sec-conclu"><h2>Conclusion</h2><p>Ce portfolio témoigne de mon cheminement, de mes apprentissages et de mon engagement envers les enjeux actuels du numérique et de la santé. Je suis motivé à poursuivre dans cette voie et à contribuer à une société plus innovante et équitable grâce à l’informatique.</p><div style="margin-top:20px; text-align:center;"><a href="mailto:alex.musial.demo@email.com" class="contact-button">Me contacter</a></div></section>
-                    <div class="footer">Projet final – Portfolio numérique – ICS3U – Alex Musial – 2025</div>
-                  </div>
-            </div>
-        </div>
-    </div>
-    
-    <script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script src="https://unpkg.com/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-    
-    <script>
-        const init = () => {
-            gsap.registerPlugin(ScrollTrigger);
-            
-            const mainContent = document.getElementById('main-content');
-            
-            const animateFixedName = () => {
-                gsap.to("#fixed-name", {
-                    opacity: 0,
-                    scrollTrigger: {
-                        trigger: "body",
-                        start: "top top",
-                        end: "150px top", 
-                        scrub: true
-                    }
-                });
-            };
-
-            const initPreloader = () => {
-                const loadingLogo = document.querySelector('.loading-logo');
-                anime({
-                    targets: loadingLogo, strokeDashoffset: [anime.setDashoffset, 0],
-                    easing: 'easeInOutSine', duration: 1500, delay: 200,
-                    complete: () => {
-                        gsap.to('.loading-screen', { 
-                            opacity: 0, duration: 0.5, delay: 0.2,
-                            onComplete: () => {
-                                document.querySelector('.loading-screen').style.display = 'none';
-                                gsap.to(mainContent, { opacity: 1, visibility: 'visible', duration: 0.5 });
-                                masterTimeline.play();
-                            }
-                        });
-                    }
-                });
-            };
-            
-            const initMotionBlurCursor = () => {
-                const cursorContainer = document.getElementById('cursor-container');
-                const trails = Array.from({ length: 15 }, (_, i) => {
-                    const el = document.createElement('div');
-                    el.className = 'cursor-trail';
-                    cursorContainer.appendChild(el);
-                    const size = 12 - i * 0.7;
-                    gsap.set(el, { width: size, height: size });
-                    return { el, x: -50, y: -50 };
-                });
-                const mouse = { x: 0, y: 0 };
-                window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
-                
-                gsap.ticker.add(() => {
-                    let prevX = mouse.x; let prevY = mouse.y;
-                    trails.forEach((trail, i) => {
-                        trail.x += (prevX - trail.x) * (0.4 + i * 0.01);
-                        trail.y += (prevY - trail.y) * (0.4 + i * 0.01);
-                        gsap.set(trail.el, { x: trail.x, y: trail.y });
-                        prevX = trail.x; prevY = trail.y;
-                    });
-                });
-            };
-
-            const introTextEl = document.getElementById('intro-text');
-            introTextEl.innerHTML = "Portfolio Numérique".split(' ').map(word => `<div class="word-wrapper"><span class="word">${word}</span></div>`).join('');
-            
-            const masterTimeline = gsap.timeline({ paused: true });
-            masterTimeline.from('.intro-text .word', { y: '100%', stagger: 0.1, duration: 1.5, ease: 'expo.out' });
-
-            const scrollTimeline = gsap.timeline({
-                scrollTrigger: {
-                    trigger: '#animation-container',
-                    start: 'top top',
-                    end: '+=8000',
-                    scrub: 1.2,
-                    pin: true,
-                }
-            });
-
-            gsap.set(['#cert-hardware', '#cert-html', '#cert-js1', '#cert-python1', '#cert-python2', '#cert-linux', '#cert-data', '.narrative-panel', '#outro-text'], { visibility: 'visible', opacity: 0 });
-
-            scrollTimeline
-                .to('#intro-text', { opacity: 0, scale: 0.8, duration: 1, ease: 'power2.in' }, 'start')
-                .from(['#cert-hardware', '#cert-html', '#cert-js1', '#cert-python1', '#cert-python2', '#cert-linux', '#cert-data'], { z: -2000, stagger: 0.1, duration: 1.5, ease: 'expo.out' }, 'start+=0.5')
-                .to(['#cert-hardware', '#cert-html', '#cert-js1', '#cert-python1', '#cert-python2', '#cert-linux', '#cert-data'], { opacity: 1, duration: 0.5 }, '<')
-                .addLabel('explode', '+=1').to('#cert-hardware', { x: -350, y: -150, rotateY: -25, rotateX: 15, scale: 0.9, duration: 2, ease: 'power2.inOut' }, 'explode').to('#cert-html', { x: -450, y: 50, rotateY: -30, rotateX: 5, scale: 0.9, duration: 2, ease: 'power2.inOut' }, 'explode').to('#cert-js1', { x: -400, y: 200, rotateY: -20, rotateX: -10, scale: 0.9, duration: 2, ease: 'power2.inOut' }, 'explode').to('#cert-python1', { x: 350, y: -150, rotateY: 25, rotateX: 15, scale: 0.9, duration: 2, ease: 'power2.inOut' }, 'explode').to('#cert-python2', { x: 450, y: 50, rotateY: 30, rotateX: 5, scale: 0.9, duration: 2, ease: 'power2.inOut' }, 'explode').to('#cert-linux', { x: 400, y: 200, rotateY: 20, rotateX: -10, scale: 0.9, duration: 2, ease: 'power2.inOut' }, 'explode').to('#cert-data', { x: 0, y: -200, rotateY: 0, rotateX: 0, scale: 1.1, duration: 2, ease: 'power2.inOut' }, 'explode')
-                .addLabel('narratePython', '+=1').to(['#cert-python1', '#cert-python2'], { scale: 1.1, duration: 0.5 }, 'narratePython').to(['#cert-python1 .highlight-ring', '#cert-python2 .highlight-ring'], { opacity: 1, duration: 0.5 }, 'narratePython').fromTo('#narrative-python', { opacity: 0, x: -100 }, { opacity: 1, x: 0, duration: 1 }, 'narratePython+=0.3').fromTo('#narrative-python .code-snippet', { opacity: 0, scale: 0.8, rotateX: -90 }, { opacity: 1, scale: 1, rotateX: 0, duration: 0.8, ease: 'back.out(1)'}, 'narratePython+=0.8')
-                .addLabel('narrateData', '+=1').to(['#cert-python1 .highlight-ring', '#cert-python2 .highlight-ring'], { opacity: 0, duration: 0.5 }, 'narrateData').to('#narrative-python', { opacity: 0, x: -100, duration: 1}, 'narrateData').to('#cert-data', { scale: 1.2, duration: 0.5 }, 'narrateData').to('#cert-data .highlight-ring', { opacity: 1, duration: 0.5}, 'narrateData').fromTo('#narrative-data', { opacity: 0, y: 100 }, { opacity: 1, y: 0, duration: 1 }, 'narrateData+=0.3')
-                .addLabel('narrateJS', '+=1').to('#cert-data .highlight-ring', { opacity: 0, duration: 0.5 }, 'narrateJS').to('#narrative-data', { opacity: 0, y: 100, duration: 1}, 'narrateJS').to('#cert-js1', { scale: 1.1, duration: 0.5 }, 'narrateJS').to('#cert-js1 .highlight-ring', { opacity: 1, duration: 0.5 }, 'narrateJS').fromTo('#narrative-js', { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 1 }, 'narrateJS+=0.3')
-                .addLabel('narrateJourney', '+=1').to('#cert-js1 .highlight-ring', { opacity: 0, duration: 0.5 }, 'narrateJourney').to('#narrative-js', { opacity: 0, scale: 0.7, duration: 1}, 'narrateJourney').to(['#cert-hardware', '#cert-html', '#cert-linux'], { scale: 1.1, duration: 0.5 }, 'narrateJourney').to(['#cert-hardware .highlight-ring', '#cert-html .highlight-ring', '#cert-linux .highlight-ring'], { opacity: 1, duration: 0.5 }, 'narrateJourney').fromTo('#narrative-journey', { opacity: 0, y: -100 }, { opacity: 1, y: 0, duration: 1 }, 'narrateJourney+=0.3')
-                .addLabel('reassemble', '+=1.5').to('.highlight-ring', { opacity: 0, duration: 0.5 }, 'reassemble').to('.narrative-panel', { opacity: 0, duration: 0.8, stagger: 0.1 }, 'reassemble').to(['#cert-hardware', '#cert-html', '#cert-js1', '#cert-python1', '#cert-python2', '#cert-linux', '#cert-data'], { x: 0, y: 0, rotationX: 0, rotationY: 0, scale: 1, duration: 2, ease: 'expo.inOut' }, 'reassemble')
-                .fromTo('#outro-text', { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1.2, duration: 1.5, ease: 'elastic.out(1, 0.5)'}, '+=0.5')
-                .to(['#cert-hardware', '#cert-html', '#cert-js1', '#cert-python1', '#cert-python2', '#cert-linux', '#cert-data', '#outro-text'], { opacity: 0, scale: 0, z: -1000, duration: 1, stagger: 0.05, ease: 'power2.in' }, '+=1');
-
-            const animatePart2Sections = () => {
-              document.querySelectorAll('#portfolio-part-2 section').forEach((sec) => {
-                gsap.to(sec, { scrollTrigger: { trigger: sec, start: "top 85%", toggleClass: {targets: sec, className: "animated"}, once: true } });
-              });
-              // Animate Cert Cards in sec-certif
-              document.querySelectorAll('#portfolio-part-2 #sec-certif .cert-card').forEach((card, idx) => {
-                gsap.to(card, { scrollTrigger: { trigger: card, start: "top 90%", toggleClass: {targets: card, className: "visible"}, once: true, delay: idx * 0.08 } });
-              });
-              // Animate Project Cards
-              document.querySelectorAll('#portfolio-part-2 .project-card').forEach((card, idx) => {
-                gsap.to(card, { scrollTrigger: { trigger: card, start: "top 90%", toggleClass: {targets: card, className: "visible"}, once: true, delay: idx * 0.08 } });
-              });
-              gsap.to('#portfolio-part-2 .footer', { scrollTrigger: { trigger: '#portfolio-part-2 .footer', start: "top 95%", toggleClass: {targets: '#portfolio-part-2 .footer', className: "animated"}, once: true } });
-            }
-
-            initPreloader();
-            initMotionBlurCursor();
-            animateFixedName(); 
-            animatePart2Sections();
-        };
-
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", init);
-        } else {
-            init();
+      // Handle the 3-second memory countdown
+      useEffect(() => {
+        let timer;
+        if (step === 'memorize' && timeLeft > 0) {
+          timer = setInterval(() => {
+            setTimeLeft((prev) => prev - 1);
+          }, 1000);
+        } else if (step === 'memorize' && timeLeft === 0) {
+          setStep('test');
         }
-    </script>
+        return () => clearInterval(timer);
+      }, [step, timeLeft]);
+
+      const startTest = () => {
+        setTimeLeft(3);
+        setStep('memorize');
+        // If a real game, you would set new random options here.
+        // setOptions(shuffleArray(getGridOptions()));
+      };
+
+      const revealAnswer = () => {
+        setStep('result');
+        // Logic to track if Option 2 was chosen would go here.
+        // setScore(prev => prev + 1); // Only for a fully functional game
+      };
+
+      const resetTest = () => {
+        setRound(prev => prev + 1);
+        setStep('intro');
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-8 font-sans selection:bg-blue-500/30">
+          
+          <div className="text-center mb-8 w-full max-w-5xl flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="flex items-center gap-3">
+              <BrainCircuit className="text-blue-500" size={32} />
+              <h1 className="text-2xl font-extrabold tracking-tight text-white">Lure Discrimination Test</h1>
+            </div>
+            <div className="text-right">
+              <p className="text-slate-400 text-sm font-semibold uppercase tracking-wider">Testing Working Memory Integrity</p>
+              <p className="text-blue-400 text-sm font-mono">Round {round} | Score: {score}</p>
+            </div>
+          </div>
+
+          <div className="w-full max-w-5xl flex-1 flex flex-col items-center justify-center">
+            
+            {step === 'intro' && (
+              <div className="text-center bg-slate-900 border border-slate-800 p-12 rounded-3xl shadow-2xl max-w-2xl animate-in fade-in zoom-in duration-300">
+                <Eye className="w-20 h-20 text-blue-500 mx-auto mb-6 opacity-90" />
+                <h2 className="text-3xl font-bold mb-4 text-white tracking-tight">Are you sleep deprived?</h2>
+                <p className="text-slate-400 mb-8 text-lg leading-relaxed">
+                  You will see a complex neural network diagram for exactly <strong className="text-blue-400">3 seconds</strong>. 
+                  Study the colors and synaptic connections carefully. Then, you must identify the exact original from a grid of three highly similar cognitive "lures".
+                </p>
+                <button 
+                  onClick={startTest}
+                  className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full shadow-lg shadow-blue-600/30 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 mx-auto text-lg"
+                >
+                  <Play size={24} fill="currentColor" />
+                  Begin 3-Second Flash
+                </button>
+              </div>
+            )}
+
+            {step === 'memorize' && (
+              <div className="flex flex-col items-center animate-in fade-in zoom-in duration-300">
+                <div className="text-8xl font-black text-blue-500 mb-10 tabular-nums animate-pulse drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                  {timeLeft}
+                </div>
+                <div className="w-96 h-96 border-4 border-dashed border-blue-500/30 rounded-3xl p-4 transition-all hover:border-blue-500 shadow-lg shadow-blue-500/20">
+                  <NeuralNetwork type="original" showLabel={false} />
+                </div>
+              </div>
+            )}
+
+            {(step === 'test' || step === 'result') && (
+              <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-500">
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl font-bold text-white mb-3">Which one is the exact original?</h2>
+                  <p className="text-slate-400 text-lg flex items-center justify-center gap-2">
+                    <CheckCircle2 size={20} className="text-green-500" /> Did you spot the original neural pathway?
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                  
+                  {options.map((option, index) => {
+                    const isOriginal = option.type === 'original';
+                    const number = index + 1;
+                    
+                    // Style each card based on game state (Test vs Result) and selection
+                    let cardStyle = "bg-slate-800/80 border-2 border-slate-700 hover:border-blue-500/50 cursor-pointer shadow-lg";
+                    if (step === 'result') {
+                      cardStyle = "cursor-default transition-all duration-500 ";
+                      if (isOriginal) {
+                        cardStyle += "bg-green-900/30 border-2 border-green-500 scale-105 shadow-[0_0_30px_rgba(34,197,94,0.3)] z-20";
+                      } else {
+                        cardStyle += "bg-slate-800/50 border-2 border-slate-800 scale-95 opacity-50";
+                      }
+                    }
+
+                    return (
+                      <div 
+                        key={option.id}
+                        className={`relative rounded-3xl p-3 transition-all duration-300 ${cardStyle}`}
+                      >
+                        {/* Number indicator from images */}
+                        <div className={`absolute -top-5 -left-5 w-12 h-12 rounded-full flex items-center justify-center font-black text-2xl border-4 border-slate-950 z-30 shadow-lg transition-colors ${step === 'result' && isOriginal ? 'bg-green-500 text-slate-950' : 'bg-slate-700 text-slate-300'}`}>
+                          {number}
+                        </div>
+                        
+                        <NeuralNetwork type={option.type} showLabel={step === 'result'} />
+                      </div>
+                    );
+                  })}
+
+                </div>
+
+                <div className="flex justify-center gap-6">
+                  {step === 'test' && (
+                    <button 
+                      onClick={revealAnswer}
+                      className="bg-green-600 hover:bg-green-500 text-white font-bold py-4 px-10 rounded-full shadow-lg transition-all flex items-center gap-3 text-lg"
+                    >
+                      <CheckCircle2 size={24} />
+                      Reveal Answer
+                    </button>
+                  )}
+                  {step === 'result' && (
+                    <button 
+                      onClick={resetTest}
+                      className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-3 text-lg hover:-translate-y-1"
+                    >
+                      <RefreshCw size={24} />
+                      Start Next Round
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    // Render configuration for React 18 Dom Mounting
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
